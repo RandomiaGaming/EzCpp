@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iomanip>
 
-static constexpr LPCWSTR ErrorLogFilePath = L"C:\\ProgramData\\EzLog.txt";
+static constexpr LPCSTR ErrorLogFilePath = "C:\\ProgramData\\EzLog.txt";
 
 static enum class ErrorSource : BYTE {
 	CustomString = 0,
@@ -14,80 +14,89 @@ static enum class ErrorSource : BYTE {
 	HResult = 2,
 	NTStatus = 3,
 };
-static LPWSTR ConstructMessage(LPCWSTR errorMessage, ErrorSource sourceType = ErrorSource::CustomString, void* source = NULL, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept {
+static LPSTR ConstructMessage(LPCSTR errorMessage, ErrorSource sourceType = ErrorSource::CustomString, void* source = NULL, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept {
 	try {
-		std::wostringstream messageStream = { };
+		std::ostringstream messageStream = { };
 
 		// Append file name
 		if (file == NULL) {
-			messageStream << L"ERROR in UnknownFile";
+			messageStream << "ERROR in UnknownFile";
 		}
 		else {
 			LPCSTR fileNameOnly = file + lstrlenA(file);
 			while (fileNameOnly >= file && *fileNameOnly != '\\' && *fileNameOnly != '/') {
 				fileNameOnly--;
 			}
-			messageStream << L"ERROR in " << (fileNameOnly + 1);
+			messageStream << "ERROR in " << (fileNameOnly + 1);
 		}
 
 		// Append line number
 		if (line == 0xFFFFFFFF) {
-			messageStream << L" at UnknownLine";
+			messageStream << " at UnknownLine";
 		}
 		else {
-			messageStream << L" at line " << line;
+			messageStream << " at line " << line;
 		}
 
 		// Append current time
 		SYSTEMTIME timeNow = { };
 		GetLocalTime(&timeNow);
 		if (timeNow.wHour == 0) {
-			messageStream << L" at 12:" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
+			messageStream << " at 12:" << timeNow.wMinute << ":" << timeNow.wSecond << "am";
 		}
 		else if (timeNow.wHour < 12) {
-			messageStream << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
+			messageStream << " at " << (timeNow.wHour % 12) << ":" << timeNow.wMinute << ":" << timeNow.wSecond << "am";
 		}
 		else {
-			messageStream << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"pm";
+			messageStream << " at " << (timeNow.wHour % 12) << ":" << timeNow.wMinute << ":" << timeNow.wSecond << "pm";
 		}
-		messageStream << L" on " << timeNow.wMonth << L"/" << timeNow.wDay << L"/" << timeNow.wYear;
+		messageStream << " on " << timeNow.wMonth << "/" << timeNow.wDay << "/" << timeNow.wYear;
 
 		// Append error source
 		if (sourceType == ErrorSource::DosErrorCode) {
-			messageStream << L" from DOS error code 0x" << std::hex << std::setw(sizeof(DWORD) * 2) << std::setfill(L'0')
+			messageStream << " from DOS error code 0x" << std::hex << std::setw(sizeof(DWORD) * 2) << std::setfill('0')
 				<< *reinterpret_cast<DWORD*>(source)
-				<< std::setfill(L' ') << std::setw(0) << std::dec;
+				<< std::setfill(' ') << std::setw(0) << std::dec;
 		}
 		else if (sourceType == ErrorSource::HResult) {
-			messageStream << L" from HResult 0x" << std::hex << std::setw(sizeof(HRESULT) * 2) << std::setfill(L'0')
+			messageStream << " from HResult 0x" << std::hex << std::setw(sizeof(HRESULT) * 2) << std::setfill('0')
 				<< *reinterpret_cast<HRESULT*>(source)
-				<< std::setfill(L' ') << std::setw(0) << std::dec;
+				<< std::setfill(' ') << std::setw(0) << std::dec;
 		}
 		else if (sourceType == ErrorSource::NTStatus) {
-			messageStream << L" from NTStatus 0x" << std::hex << std::setw(sizeof(NTSTATUS) * 2) << std::setfill(L'0')
+			messageStream << " from NTStatus 0x" << std::hex << std::setw(sizeof(NTSTATUS) * 2) << std::setfill('0')
 				<< *reinterpret_cast<NTSTATUS*>(source)
-				<< std::setfill(L' ') << std::setw(0) << std::dec;
+				<< std::setfill(' ') << std::setw(0) << std::dec;
 		}
 
 		// Append error message
-		messageStream << L": " << errorMessage;
-		UINT32 errorMessageLength = lstrlenW(errorMessage);
+		messageStream << ": " << errorMessage;
+		UINT32 errorMessageLength = lstrlenA(errorMessage);
 		if (errorMessageLength >= 2) {
-			LPCWSTR lastTwoChars = errorMessage + (errorMessageLength - 2);
-			if (lastTwoChars[0] != L'\r' || lastTwoChars[1] != L'\n') {
-				messageStream << L"\r\n";
+			LPCSTR lastTwoChars = errorMessage + (errorMessageLength - 2);
+			if (lastTwoChars[0] != '\r' || lastTwoChars[1] != '\n') {
+				messageStream << "\r\n";
 			}
 		}
 
 		// Copy string and return
-		std::wstring messageString = messageStream.str();
-		LPWSTR message = new WCHAR[messageString.size() + 1];
-		lstrcpyW(message, messageString.c_str());
+		std::string messageString = messageStream.str();
+		LPSTR message = new CHAR[messageString.size() + 1];
+		lstrcpyA(message, messageString.c_str());
 		return message;
 	}
 	catch (...) {
 		return NULL;
 	}
+}
+static LPSTR NarrowString(LPCWSTR wideStr) noexcept {
+	DWORD bufferSize = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, NULL, 0, NULL, NULL);
+
+	LPSTR narrowStr = new CHAR[bufferSize];
+
+	WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, narrowStr, bufferSize, NULL, NULL);
+
+	return narrowStr;
 }
 
 EzError::EzError(DWORD errorCode, LPCSTR file, UINT32 line) noexcept {
@@ -96,8 +105,8 @@ EzError::EzError(DWORD errorCode, LPCSTR file, UINT32 line) noexcept {
 		_hr = 0;
 		_nt = 0;
 
-		LPWSTR systemMessage = NULL;
-		DWORD systemMessageLength = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _errorCode, 0, reinterpret_cast<LPWSTR>(&systemMessage), 0, NULL);
+		LPSTR systemMessage = NULL;
+		DWORD systemMessageLength = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _errorCode, 0, reinterpret_cast<LPSTR>(&systemMessage), 0, NULL);
 
 		_message = ConstructMessage(systemMessage, ErrorSource::DosErrorCode, &_errorCode, file, line);
 
@@ -111,8 +120,8 @@ EzError::EzError(HRESULT hr, LPCSTR file, UINT32 line) noexcept {
 		_hr = hr;
 		_nt = 0;
 
-		LPWSTR systemMessage = NULL;
-		DWORD systemMessageLength = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _hr, 0, reinterpret_cast<LPWSTR>(&systemMessage), 0, NULL);
+		LPSTR systemMessage = NULL;
+		DWORD systemMessageLength = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _hr, 0, reinterpret_cast<LPSTR>(&systemMessage), 0, NULL);
 
 		if (systemMessageLength > 0) {
 			_message = ConstructMessage(systemMessage, ErrorSource::HResult, &_hr, file, line);
@@ -121,9 +130,11 @@ EzError::EzError(HRESULT hr, LPCSTR file, UINT32 line) noexcept {
 		}
 		else {
 			_com_error comError(_hr);
-			LPCWSTR comErrorMessage = comError.ErrorMessage();
+			LPSTR comErrorMessage = NarrowString(comError.ErrorMessage());
 
 			_message = ConstructMessage(comErrorMessage, ErrorSource::HResult, &_hr, file, line);
+
+			delete[] comErrorMessage;
 		}
 	}
 	catch (...) {}
@@ -134,8 +145,8 @@ EzError::EzError(NTSTATUS* pNt, LPCSTR file, UINT32 line) noexcept {
 		_nt = *pNt;
 		_hr = HRESULT_FROM_NT(_nt);
 
-		LPWSTR systemMessage = NULL;
-		DWORD systemMessageLength = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _hr, 0, reinterpret_cast<LPWSTR>(&systemMessage), 0, NULL);
+		LPSTR systemMessage = NULL;
+		DWORD systemMessageLength = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, _hr, 0, reinterpret_cast<LPSTR>(&systemMessage), 0, NULL);
 
 		if (systemMessageLength > 0) {
 			_message = ConstructMessage(systemMessage, ErrorSource::NTStatus, &_nt, file, line);
@@ -144,31 +155,16 @@ EzError::EzError(NTSTATUS* pNt, LPCSTR file, UINT32 line) noexcept {
 		}
 		else {
 			_com_error comError(_hr);
-			LPCWSTR comErrorMessage = comError.ErrorMessage();
+			LPSTR comErrorMessage = NarrowString(comError.ErrorMessage());
 
 			_message = ConstructMessage(comErrorMessage, ErrorSource::NTStatus, &_nt, file, line);
+
+			delete[] comErrorMessage;
 		}
 	}
 	catch (...) {}
 }
 EzError::EzError(LPCSTR message, LPCSTR file, UINT32 line) noexcept {
-	try {
-		_errorCode = 0;
-		_hr = 0;
-		_nt = 0;
-
-		UINT32 wideMessageLength = MultiByteToWideChar(CP_UTF8, 0, message, -1, NULL, 0);
-		LPWSTR wideMessage = new WCHAR[wideMessageLength];
-		MultiByteToWideChar(CP_UTF8, 0, message, -1, wideMessage, wideMessageLength);
-		wideMessage[wideMessageLength - 1] = L'\0';
-
-		_message = ConstructMessage(wideMessage, ErrorSource::CustomString, NULL, file, line);
-
-		delete[] wideMessage;
-	}
-	catch (...) {}
-}
-EzError::EzError(LPCWSTR message, LPCSTR file, UINT32 line) noexcept {
 	try {
 		_errorCode = 0;
 		_hr = 0;
@@ -185,9 +181,9 @@ EzError::EzError(const EzError& other) noexcept {
 	_nt = other._nt;
 
 	if (other._message != NULL) {
-		size_t messageLength = lstrlenW(other._message) + 1;
-		_message = new WCHAR[messageLength];
-		lstrcpyW(_message, other._message);
+		size_t messageLength = lstrlenA(other._message) + 1;
+		_message = new CHAR[messageLength];
+		lstrcpyA(_message, other._message);
 	}
 	else {
 		_message = NULL;
@@ -202,9 +198,9 @@ EzError& EzError::operator=(const EzError& other) noexcept {
 		_nt = other._nt;
 
 		if (other._message != NULL) {
-			size_t messageLength = lstrlenW(other._message) + 1;
-			_message = new WCHAR[messageLength];
-			lstrcpyW(_message, other._message);
+			size_t messageLength = lstrlenA(other._message) + 1;
+			_message = new CHAR[messageLength];
+			lstrcpyA(_message, other._message);
 		}
 		else {
 			_message = NULL;
@@ -234,14 +230,14 @@ void EzError::Print() const noexcept {
 			// Don't care about the color
 		}
 
-		int messageLength = lstrlenW(_message);
+		int messageLength = lstrlenA(_message);
 		if (messageLength == 0) {
 			// If this fails assume the string is probably 64 characters long
 			messageLength = 64;
 		}
 
 		DWORD charsWritten = 0;
-		if (!WriteConsoleW(stdoutHandle, _message, messageLength, &charsWritten, NULL) || charsWritten != messageLength) {
+		if (!WriteConsoleA(stdoutHandle, _message, messageLength, &charsWritten, NULL) || charsWritten != messageLength) {
 			// Don't care if write fails or is a partial write
 		}
 
@@ -257,9 +253,9 @@ printFailed:
 		// If we can't then create a new one
 		// If that fails then try again without read access
 		// If all else fails then just print the error don't write it to the log file.
-		HANDLE logFile = CreateFileW(ErrorLogFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE logFile = CreateFileA(ErrorLogFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (logFile == INVALID_HANDLE_VALUE) {
-			logFile = CreateFileW(ErrorLogFilePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			logFile = CreateFileA(ErrorLogFilePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (logFile == INVALID_HANDLE_VALUE) {
 				goto writeFailed;
 			}
@@ -307,14 +303,14 @@ printFailed:
 			fileSize = 0;
 		}
 
-		int messageLength = lstrlenW(_message);
+		int messageLength = lstrlenA(_message);
 		if (messageLength == 0) {
 			// If this fails assume the string is probably 64 characters long
 			messageLength = 64;
 		}
 
 		DWORD bytesWrittenMessage = 0;
-		if (!WriteFile(logFile, _message, messageLength * sizeof(WCHAR), &bytesWrittenMessage, NULL)) {
+		if (!WriteFile(logFile, _message, messageLength * sizeof(CHAR), &bytesWrittenMessage, NULL)) {
 			// If we couldn't write to the file then give up
 			if (!CloseHandle(logFile)) {
 				// Don't care if the handle won't close
@@ -374,7 +370,7 @@ EzError::~EzError() noexcept {
 	catch (...) {}
 }
 
-LPCWSTR EzError::GetMessage() const noexcept {
+LPCSTR EzError::what() const noexcept {
 	try {
 		return _message;
 	}

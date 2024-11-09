@@ -30,7 +30,7 @@ void EzCreateHwndRenderer(HWND windowHandle, const EzHwndRendererSettings* setti
 	HRESULT hr = 0;
 
 	if (!IsWindow(windowHandle)) {
-		throw EzError(L"windowHandle must be a valid HWND.", __FILE__, __LINE__);
+		throw EzError("windowHandle must be a valid HWND.", __FILE__, __LINE__);
 	}
 
 	D2D1_FACTORY_TYPE factoryType = D2D1_FACTORY_TYPE_MULTI_THREADED;

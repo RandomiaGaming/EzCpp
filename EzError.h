@@ -15,10 +15,9 @@ public:
 	explicit EzError(HRESULT hr, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
 	explicit EzError(NTSTATUS* pNt, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
 	explicit EzError(LPCSTR message, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(LPCWSTR message, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
 	~EzError() noexcept;
 	void Print() const noexcept;
-	LPCWSTR GetMessage() const noexcept;
+	LPCSTR what() const noexcept override;
 	DWORD GetErrorCode() const noexcept;
 	HRESULT GetHR() const noexcept;
 	NTSTATUS GetNT() const noexcept;
@@ -31,7 +30,7 @@ public:
 	static void ThrowFromNT(NTSTATUS nt, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
 
 private:
-	LPWSTR _message = NULL;
+	LPSTR _message = NULL;
 	DWORD _errorCode = 0;
 	HRESULT _hr = 0;
 	NTSTATUS _nt = 0;

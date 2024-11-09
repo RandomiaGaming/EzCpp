@@ -140,7 +140,7 @@ LPWSTR EzAudioGetDeviceName(IMMDevice* device) {
 
 	if (propVarient.vt != VT_LPWSTR) {
 		PropVariantClear(&propVarient);
-		throw EzError(L"The device friendly name was not a wide string.", __FILE__, __LINE__);
+		throw EzError("The device friendly name was not a wide string.", __FILE__, __LINE__);
 	}
 
 	LPWSTR deviceName = new WCHAR[lstrlen(propVarient.pwszVal) + 1];
@@ -207,7 +207,7 @@ WAVEFORMATEX* EzAudioGetDeviceFormat(IAudioClient* client) {
 		}
 	}
 	delete[] format;
-	throw EzError::EzError(L"Supplied audio client does not support any formats and is basically a hunk of garbage.", __FILE__, __LINE__);
+	throw EzError("Supplied audio client does not support any formats and is basically a hunk of garbage.", __FILE__, __LINE__);
 
 foundSupportedFormat:
 	return format;
@@ -313,7 +313,7 @@ void EzAudioFillBuffer(IAudioClient* client, IAudioRenderClient* renderer, const
 	HRESULT hr = 0;
 
 	if (*position > bufferLength) {
-		throw EzError(L"position was out of bounds of buffer.", __FILE__, __LINE__);
+		throw EzError("position was out of bounds of buffer.", __FILE__, __LINE__);
 	}
 
 	UINT32 driverBufferTotalFrames = 0;
@@ -527,7 +527,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError(L"inputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
+		throw EzError("inputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
 	}
 	if ((outputFormat->nChannels * outputFormat->wBitsPerSample) / 8 != outputFormat->nBlockAlign || (outputFormat->nChannels * outputFormat->wBitsPerSample) % 8 != 0) {
 		imfInputSample->Release();
@@ -536,7 +536,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError(L"outputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
+		throw EzError("outputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
 	}
 	UINT32 computedOutputLength = (static_cast<UINT64>(inputLength) * outputFormat->nSamplesPerSec * outputFormat->nBlockAlign) / (static_cast<UINT64>(inputFormat->nSamplesPerSec) * inputFormat->nBlockAlign);
 	UINT32 maxOutputBufferCapacity = computedOutputLength + (computedOutputLength / 10);
@@ -605,7 +605,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError(L"Invalid status returned from IMFTransform::ProcessOutput().", __FILE__, __LINE__);
+		throw EzError("Invalid status returned from IMFTransform::ProcessOutput().", __FILE__, __LINE__);
 	}
 
 	UINT32 outputLength = 0;
@@ -631,7 +631,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError(L"Output data overflowed allocated buffer.", __FILE__, __LINE__);
+		throw EzError("Output data overflowed allocated buffer.", __FILE__, __LINE__);
 	}
 
 	BYTE* outputBuffer = new BYTE[outputLength];
