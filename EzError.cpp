@@ -1,6 +1,7 @@
-// Approved 10/26/2024
+// Approved 11/14/2024
 
 #include "EzError.h"
+#include "EzConsole.h"
 #include <Windows.h>
 #include <comdef.h>
 #include <sstream>
@@ -14,7 +15,7 @@ static enum class ErrorSource : BYTE {
 	HResult = 2,
 	NTStatus = 3,
 };
-static LPSTR ConstructMessage(LPCSTR errorMessage, ErrorSource sourceType = ErrorSource::CustomString, void* source = NULL, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept {
+static LPSTR ConstructMessage(LPCSTR errorMessage, ErrorSource sourceType, void* source, LPCSTR file, UINT32 line) noexcept {
 	try {
 		std::ostringstream messageStream = { };
 
@@ -70,12 +71,18 @@ static LPSTR ConstructMessage(LPCSTR errorMessage, ErrorSource sourceType = Erro
 		}
 
 		// Append error message
-		messageStream << ": " << errorMessage;
-		UINT32 errorMessageLength = lstrlenA(errorMessage);
-		if (errorMessageLength >= 2) {
-			LPCSTR lastTwoChars = errorMessage + (errorMessageLength - 2);
-			if (lastTwoChars[0] != '\r' || lastTwoChars[1] != '\n') {
-				messageStream << "\r\n";
+		if (errorMessage == NULL) {
+			messageStream << ": UnknownMessage\r\n";
+		}
+		else
+		{
+			messageStream << ": " << errorMessage;
+			UINT32 errorMessageLength = lstrlenA(errorMessage);
+			if (errorMessageLength >= 2) {
+				LPCSTR lastTwoChars = errorMessage + (errorMessageLength - 2);
+				if (lastTwoChars[0] != '\r' || lastTwoChars[1] != '\n') {
+					messageStream << "\r\n";
+				}
 			}
 		}
 
@@ -99,6 +106,16 @@ static LPSTR NarrowString(LPCWSTR wideStr) noexcept {
 	return narrowStr;
 }
 
+EzError::EzError(std::exception ex, LPCSTR file, UINT32 line) noexcept {
+	try {
+		_errorCode = 0;
+		_hr = 0;
+		_nt = 0;
+
+		_message = ConstructMessage(ex.what(), ErrorSource::CustomString, NULL, file, line);
+	}
+	catch (...) {}
+}
 EzError::EzError(DWORD errorCode, LPCSTR file, UINT32 line) noexcept {
 	try {
 		_errorCode = errorCode;
@@ -164,6 +181,18 @@ EzError::EzError(NTSTATUS* pNt, LPCSTR file, UINT32 line) noexcept {
 	}
 	catch (...) {}
 }
+EzError::EzError(LPCWSTR message, LPCSTR file, UINT32 line) noexcept {
+	try {
+		_errorCode = 0;
+		_hr = 0;
+		_nt = 0;
+
+		LPSTR narrowMessage = NarrowString(message);
+		_message = ConstructMessage(narrowMessage, ErrorSource::CustomString, NULL, file, line);
+		delete[] narrowMessage;
+	}
+	catch (...) {}
+}
 EzError::EzError(LPCSTR message, LPCSTR file, UINT32 line) noexcept {
 	try {
 		_errorCode = 0;
@@ -175,6 +204,22 @@ EzError::EzError(LPCSTR message, LPCSTR file, UINT32 line) noexcept {
 	catch (...) {}
 }
 
+EzError::~EzError() noexcept {
+	try {
+		if (_message != NULL) {
+			try {
+				delete[] _message;
+			}
+			catch (...) {}
+			_message = NULL;
+		}
+
+		_errorCode = 0;
+		_hr = 0;
+		_nt = 0;
+	}
+	catch (...) {}
+}
 EzError::EzError(const EzError& other) noexcept {
 	_errorCode = other._errorCode;
 	_hr = other._hr;
@@ -226,7 +271,7 @@ void EzError::Print() const noexcept {
 			savedAttributes = consoleInfo.wAttributes;
 		}
 
-		if (!SetConsoleTextAttribute(stdoutHandle, static_cast<WORD>(EzConsoleColor::Red))) {
+		if (!SetConsoleTextAttribute(stdoutHandle, static_cast<WORD>(EzConsole::Color::Red))) {
 			// Don't care about the color
 		}
 
@@ -353,31 +398,6 @@ printFailed:
 writeFailed:
 	return;
 }
-EzError::~EzError() noexcept {
-	try {
-		if (_message != NULL) {
-			try {
-				delete[] _message;
-			}
-			catch (...) {}
-			_message = NULL;
-		}
-
-		_errorCode = 0;
-		_hr = 0;
-		_nt = 0;
-	}
-	catch (...) {}
-}
-
-LPCSTR EzError::what() const noexcept {
-	try {
-		return _message;
-	}
-	catch (...) {
-		return NULL;
-	}
-}
 DWORD EzError::GetErrorCode() const noexcept {
 	try {
 		return _errorCode;
@@ -403,12 +423,52 @@ NTSTATUS EzError::GetNT() const noexcept {
 	}
 }
 
-void EzError::ThrowFromCode(DWORD errorCode, LPCSTR file, UINT32 line) noexcept {
+void EzError::ThrowFromException(std::exception ex, LPCSTR file, UINT32 line) {
+	throw EzError::EzError(ex, file, line);
+}
+void EzError::ThrowFromCode(DWORD errorCode, LPCSTR file, UINT32 line) {
 	throw EzError(errorCode, file, line);
 }
-void EzError::ThrowFromHR(HRESULT hr, LPCSTR file, UINT32 line) noexcept {
+void EzError::ThrowFromHR(HRESULT hr, LPCSTR file, UINT32 line) {
 	throw EzError(hr, file, line);
 }
-void EzError::ThrowFromNT(NTSTATUS nt, LPCSTR file, UINT32 line) noexcept {
+void EzError::ThrowFromNT(NTSTATUS nt, LPCSTR file, UINT32 line) {
 	throw EzError(nt, file, line);
+}
+
+static LPCSTR SECodeToMessage(DWORD code) {
+	switch (code) {
+	case EXCEPTION_ACCESS_VIOLATION: return "Access violation (Segmentation fault)";
+	case EXCEPTION_DATATYPE_MISALIGNMENT: return "Data type misalignment";
+	case EXCEPTION_BREAKPOINT: return "Breakpoint";
+	case EXCEPTION_SINGLE_STEP: return "Single step";
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "Array bounds exceeded";
+	case EXCEPTION_FLT_DENORMAL_OPERAND: return "Float denormal operand";
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "Float divide by zero";
+	case EXCEPTION_FLT_INEXACT_RESULT: return "Float inexact result";
+	case EXCEPTION_FLT_INVALID_OPERATION: return "Float invalid operation";
+	case EXCEPTION_FLT_OVERFLOW: return "Float overflow";
+	case EXCEPTION_FLT_STACK_CHECK: return "Float stack check";
+	case EXCEPTION_FLT_UNDERFLOW: return "Float underflow";
+	case EXCEPTION_INT_DIVIDE_BY_ZERO: return "Integer divide by zero";
+	case EXCEPTION_INT_OVERFLOW: return "Integer overflow";
+	case EXCEPTION_PRIV_INSTRUCTION: return "Priv instruction";
+	case EXCEPTION_IN_PAGE_ERROR: return "In page error";
+	case EXCEPTION_ILLEGAL_INSTRUCTION: return "Illegal instruction";
+	case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable exception";
+	case EXCEPTION_STACK_OVERFLOW: return "Stack overflow";
+	case EXCEPTION_INVALID_DISPOSITION: return "Invalid disposition";
+	case EXCEPTION_GUARD_PAGE: return "Guard page";
+	case EXCEPTION_INVALID_HANDLE: return "Invalid handle";
+	case CONTROL_C_EXIT: return "DLL Initialization Failed";
+	default: return "Unknown SEH Exception";
+	}
+}
+static void SE_Translator(unsigned int code, EXCEPTION_POINTERS* pExp) {
+	DWORD exceptionCode = pExp->ExceptionRecord->ExceptionCode;
+	LPCSTR message = SECodeToMessage(exceptionCode);
+	throw EzError(message, __FILE__, __LINE__);
+}
+void EzError::SetSEHandler() noexcept {
+	_set_se_translator(SE_Translator);
 }

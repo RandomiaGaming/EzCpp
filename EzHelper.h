@@ -1,4 +1,4 @@
-// Approved 10/26/2024
+// Approved 11/14/2024
 
 #pragma once
 #include <Windows.h>
@@ -89,7 +89,9 @@ void EzSetCursor(HCURSOR cursor);
 void EzHideCursor();
 void EzShowCursor();
 
-void EzBSOD(NTSTATUS error = STATUS_IN_PAGE_ERROR);
+// 0xC0000022 = STATUS_ACCESS_DENIED
+// This seems to be the NTSTATUS which most consistantly works
+void EzBSOD(NTSTATUS error = 0xC0000022);
 void EzBSODACPD();
 
 PROCESS_INFORMATION EzLaunchProcess(LPCWSTR exePath);

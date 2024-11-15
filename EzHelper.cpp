@@ -1,4 +1,4 @@
-// Approved 10/26/2024
+// Approved 11/14/2024
 
 #include "EzHelper.h"
 #include "EzTokens.h"
@@ -408,7 +408,7 @@ HDESK EzGetPrimaryDesktop() {
 	if (desktop == NULL) {
 		DWORD lastError = GetLastError();
 		if (lastError == ERROR_INVALID_FUNCTION) {
-			desktop = OpenDesktop(L"Winlogon", 0, FALSE, GENERIC_ALL);
+			desktop = OpenDesktopW(L"Winlogon", 0, FALSE, GENERIC_ALL);
 			if (desktop == NULL) {
 				EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
 			}
@@ -504,7 +504,7 @@ void EzBSOD(NTSTATUS errorCode) {
 
 	PNtRaiseHardError NtRaiseHardError = reinterpret_cast<PNtRaiseHardError>(EzGetFunctionAddressW(L"NtRaiseHardError", L"ntdll.dll"));
 	HARDERROR_RESPONSE response;
-	nt = NtRaiseHardError(0xc0000022, 0, NULL, NULL, HARDERROR_RESPONSE_OPTION::OptionShutdownSystem, &response);
+	nt = NtRaiseHardError(errorCode, 0, NULL, NULL, HARDERROR_RESPONSE_OPTION::OptionShutdownSystem, &response);
 	if (FAILED(nt)) {
 		EzError::ThrowFromNT(nt, __FILE__, __LINE__);
 	}

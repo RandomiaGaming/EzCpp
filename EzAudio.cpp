@@ -1,4 +1,4 @@
-// Approved 10/26/2024
+// Approved 11/14/2024
 
 #include "EzAudio.h"
 #include "EzError.h"
