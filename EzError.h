@@ -12,26 +12,27 @@
 
 class EzError final {
 public:
-	explicit EzError(std::exception ex, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(DWORD errorCode, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(HRESULT hr, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(NTSTATUS* pNt, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(LPCWSTR message, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
-	explicit EzError(LPCSTR message, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF) noexcept;
+	explicit EzError(std::exception ex, LPCSTR file, UINT32 line) noexcept;
+	explicit EzError(DWORD errorCode, LPCSTR file, UINT32 line) noexcept;
+	explicit EzError(HRESULT hr, LPCSTR file, UINT32 line) noexcept;
+	explicit EzError(NTSTATUS* pNt, LPCSTR file, UINT32 line) noexcept;
+	explicit EzError(LPCWSTR message, LPCSTR file, UINT32 line) noexcept;
+	explicit EzError(LPCSTR message, LPCSTR file, UINT32 line) noexcept;
 	
 	~EzError() noexcept;
 	EzError(const EzError& other) noexcept;
 	EzError& operator=(const EzError& other) noexcept;
 
 	void Print() const noexcept;
+	LPCSTR GetMessagePLZ() const noexcept;
 	DWORD GetErrorCode() const noexcept;
 	HRESULT GetHR() const noexcept;
 	NTSTATUS GetNT() const noexcept;
 
-	static void ThrowFromException(std::exception ex, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF);
-	static void ThrowFromCode(DWORD errorCode, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF);
-	static void ThrowFromHR(HRESULT hr, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF);
-	static void ThrowFromNT(NTSTATUS nt, LPCSTR file = NULL, UINT32 line = 0xFFFFFFFF);
+	static void ThrowFromException(std::exception ex, LPCSTR file, UINT32 line);
+	static void ThrowFromCode(DWORD errorCode, LPCSTR file, UINT32 line);
+	static void ThrowFromHR(HRESULT hr, LPCSTR file, UINT32 line);
+	static void ThrowFromNT(NTSTATUS nt, LPCSTR file, UINT32 line);
 
 	static void SetSEHandler() noexcept;
 

@@ -398,6 +398,14 @@ printFailed:
 writeFailed:
 	return;
 }
+LPCSTR EzError::GetMessagePLZ() const noexcept {
+	try {
+		return _message;
+	}
+	catch (...) {
+		return NULL;
+	}
+}
 DWORD EzError::GetErrorCode() const noexcept {
 	try {
 		return _errorCode;
