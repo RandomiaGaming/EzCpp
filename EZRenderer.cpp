@@ -30,7 +30,7 @@ void EzCreateHwndRenderer(HWND windowHandle, const EzHwndRendererSettings* setti
 	HRESULT hr = 0;
 
 	if (!IsWindow(windowHandle)) {
-		throw EzError("windowHandle must be a valid HWND.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("windowHandle must be a valid HWND.", __FILE__, __LINE__);
 	}
 
 	D2D1_FACTORY_TYPE factoryType = D2D1_FACTORY_TYPE_MULTI_THREADED;
@@ -40,7 +40,7 @@ void EzCreateHwndRenderer(HWND windowHandle, const EzHwndRendererSettings* setti
 	ID2D1Factory1* factory = NULL;
 	hr = D2D1CreateFactory(factoryType, &factory);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	D2D1_RENDER_TARGET_PROPERTIES renderTargetProperties = { };
@@ -80,7 +80,7 @@ void EzCreateHwndRenderer(HWND windowHandle, const EzHwndRendererSettings* setti
 	RECT windowRect = { };
 	if (!GetWindowRect(windowHandle, &windowRect)) {
 		factory->Release();
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	if (settings->BufferWidth == 0) {
 		windowRenderTargetProperties.pixelSize.width = windowRect.right - windowRect.left;
@@ -103,7 +103,7 @@ void EzCreateHwndRenderer(HWND windowHandle, const EzHwndRendererSettings* setti
 	hr = factory->CreateHwndRenderTarget(renderTargetProperties, windowRenderTargetProperties, &windowRenderTarget);
 	if (FAILED(hr)) {
 		factory->Release();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	if (pFactory == NULL) {
@@ -173,7 +173,7 @@ void EzCreateSwapChainRenderer(HWND windowHandle, const EzSwapChainRendererSetti
 		D3D11_SDK_VERSION, // Use latest SDK version
 		&swapChainDesc, &swapChain, &d3dDevice, NULL, NULL);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	D2D1_FACTORY_TYPE factoryType = D2D1_FACTORY_TYPE_MULTI_THREADED;
@@ -183,20 +183,20 @@ void EzCreateSwapChainRenderer(HWND windowHandle, const EzSwapChainRendererSetti
 	ID2D1Factory1* factory = NULL;
 	hr = D2D1CreateFactory(factoryType, &factory);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IDXGIDevice* dxgiDevice = NULL;
 	hr = d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	d3dDevice->Release();
 
 	ID2D1Device* device = NULL;
 	hr = factory->CreateDevice(dxgiDevice, &device);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	dxgiDevice->Release();
 
@@ -207,14 +207,14 @@ void EzCreateSwapChainRenderer(HWND windowHandle, const EzSwapChainRendererSetti
 	ID2D1DeviceContext* deviceContext = NULL;
 	hr = device->CreateDeviceContext(deviceContextOptions, &deviceContext);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	device->Release();
 
 	IDXGISurface* dxgiBackBuffer = NULL;
 	hr = swapChain->GetBuffer(0, __uuidof(IDXGISurface), reinterpret_cast<void**>(&dxgiBackBuffer));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	D2D1_BITMAP_PROPERTIES1 backBufferProperties = { };
@@ -243,7 +243,7 @@ void EzCreateSwapChainRenderer(HWND windowHandle, const EzSwapChainRendererSetti
 	ID2D1Bitmap1* backBuffer = NULL;
 	hr = deviceContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, &backBufferProperties, &backBuffer);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	dxgiBackBuffer->Release();
 
@@ -253,7 +253,7 @@ void EzCreateSwapChainRenderer(HWND windowHandle, const EzSwapChainRendererSetti
 	ID2D1RenderTarget* renderTarget = NULL;
 	hr = deviceContext->QueryInterface(__uuidof(ID2D1RenderTarget), reinterpret_cast<void**>(&renderTarget));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	deviceContext->Release();
 
@@ -300,14 +300,14 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 
 	hr = CoInitializeEx(NULL, COINIT_SPEED_OVER_MEMORY);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IWICImagingFactory* factory = NULL;
 	hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
 	if (FAILED(hr)) {
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IWICBitmapDecoder* decoder = NULL;
@@ -315,7 +315,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 	if (FAILED(hr)) {
 		factory->Release();
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IWICBitmapFrameDecode* frame = NULL;
@@ -324,7 +324,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 		decoder->Release();
 		factory->Release();
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IWICFormatConverter* converter = NULL;
@@ -335,7 +335,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 		decoder->Release();
 		factory->Release();
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	hr = converter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
@@ -345,7 +345,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 		decoder->Release();
 		factory->Release();
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	ID2D1Bitmap* output = NULL;
@@ -356,7 +356,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, LPCWSTR filePath) {
 		decoder->Release();
 		factory->Release();
 		CoUninitialize();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	converter->Release();
@@ -391,7 +391,7 @@ ID2D1Bitmap* EzLoadBitmap(ID2D1RenderTarget* renderTarget, const EzBitmapAsset* 
 	bitmapProperties.pixelFormat.alphaMode = asset->AlphaMode;
 	hr = renderTarget->CreateBitmap(bitmapSize, asset->Buffer, asset->Width * 4, &bitmapProperties, &output);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return output;

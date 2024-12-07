@@ -9,7 +9,7 @@
 HANDLE EzOpenCurrentToken() {
 	HANDLE output;
 	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &output)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return output;
 }
@@ -19,7 +19,7 @@ HANDLE EzDuplicateCurrentToken() {
 	HANDLE currentTokenCopy;
 	if (!DuplicateTokenEx(currentToken, TOKEN_ALL_ACCESS, NULL, SecurityDelegation, TokenPrimary, &currentTokenCopy)) {
 		CloseHandle(currentToken);
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	CloseHandle(currentToken);
 
@@ -30,16 +30,16 @@ HANDLE EzDuplicateCurrentToken() {
 void EzImpersonate(HANDLE token) {
 	if (!ImpersonateLoggedOnUser(token)) {
 		if (!SetThreadToken(NULL, token)) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 	}
 }
 void EzStopImpersonating() {
 	if (!SetThreadToken(NULL, NULL)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	if (!RevertToSelf()) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzImpersonateWinLogon() {
@@ -47,7 +47,7 @@ void EzImpersonateWinLogon() {
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (snapshot == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD winLogonPID = 0;
@@ -56,7 +56,7 @@ void EzImpersonateWinLogon() {
 	if (!Process32First(snapshot, &processEntry)) {
 		lastError = GetLastError();
 		CloseHandle(snapshot);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	do {
 		if (lstrcmp(processEntry.szExeFile, L"winlogon.exe") == 0) {
@@ -67,24 +67,24 @@ void EzImpersonateWinLogon() {
 	lastError = GetLastError();
 	if (lastError != 0 && lastError != ERROR_NO_MORE_FILES) {
 		CloseHandle(snapshot);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	CloseHandle(snapshot);
 
 	if (winLogonPID == 0) {
-		throw EzError("WinLogon.exe could not be found in the list of running processes.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("WinLogon.exe could not be found in the list of running processes.", __FILE__, __LINE__);
 	}
 
 	HANDLE winLogon = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, winLogonPID);
 	if (winLogon == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	HANDLE winLogonToken;
 	if (!OpenProcessToken(winLogon, TOKEN_QUERY | TOKEN_DUPLICATE, &winLogonToken)) {
 		lastError = GetLastError();
 		CloseHandle(winLogon);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	try {
@@ -104,7 +104,7 @@ void EzImpersonateLsass() {
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (snapshot == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD lsassPID = 0;
@@ -113,7 +113,7 @@ void EzImpersonateLsass() {
 	if (!Process32First(snapshot, &processEntry)) {
 		lastError = GetLastError();
 		CloseHandle(snapshot);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	do {
 		if (lstrcmp(processEntry.szExeFile, L"lsass.exe") == 0) {
@@ -124,24 +124,24 @@ void EzImpersonateLsass() {
 	lastError = GetLastError();
 	if (lastError != 0 && lastError != ERROR_NO_MORE_FILES) {
 		CloseHandle(snapshot);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	CloseHandle(snapshot);
 
 	if (lsassPID == 0) {
-		throw EzError("Lsass.exe could not be found in the list of running processes.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("Lsass.exe could not be found in the list of running processes.", __FILE__, __LINE__);
 	}
 
 	HANDLE lsass = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, lsassPID);
 	if (lsass == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	HANDLE lsassToken;
 	if (!OpenProcessToken(lsass, TOKEN_QUERY | TOKEN_DUPLICATE, &lsassToken)) {
 		lastError = GetLastError();
 		CloseHandle(lsass);
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	try {
@@ -162,7 +162,7 @@ LUID EzLookupPrivilege(LPCWSTR privilege) {
 	LUID output = { };
 	if (!LookupPrivilegeValue(NULL, privilege, &output))
 	{
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return output;
 }
@@ -178,19 +178,19 @@ void EzEnableAllPrivileges(HANDLE token) {
 	if (!AdjustTokenPrivileges(token, FALSE, privileges, sizeof(TOKEN_PRIVILEGES) * (sizeof(LUID_AND_ATTRIBUTES) * (privileges->PrivilegeCount - 1)), NULL, NULL))
 	{
 		delete[] privileges;
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	lastError = GetLastError();
 	if (lastError == ERROR_NOT_ALL_ASSIGNED) {
 		delete[] privileges;
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	delete[] privileges;
 }
 void EzDisableAllPrivileges(HANDLE token) {
 	if (!AdjustTokenPrivileges(token, TRUE, NULL, 0, NULL, NULL))
 	{
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzEnablePrivilege(HANDLE token, LUID privilege) {
@@ -203,12 +203,12 @@ void EzEnablePrivilege(HANDLE token, LUID privilege) {
 
 	if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
 	{
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	// Required secondarry check because AdjustTokenPrivileges returns successful if some but not all permissions were adjusted.
 	lastError = GetLastError();
 	if (lastError == ERROR_NOT_ALL_ASSIGNED) {
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 }
 void EzDisablePrivilege(HANDLE token, LUID privilege) {
@@ -219,7 +219,7 @@ void EzDisablePrivilege(HANDLE token, LUID privilege) {
 
 	if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
 	{
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 BOOL EzTokenHasPrivilege(HANDLE token, LUID privilege) {
@@ -242,7 +242,7 @@ PROCESS_INFORMATION EzLaunchAsToken(HANDLE token, LPCWSTR exePath) {
 	STARTUPINFO startupInfo = { };
 	PROCESS_INFORMATION processInfo = { };
 	if (!CreateProcessWithTokenW(token, LOGON_WITH_PROFILE, exePath, NULL, 0, NULL, NULL, &startupInfo, &processInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return processInfo;
@@ -265,7 +265,7 @@ PROCESS_INFORMATION EzLaunchAsUser(HANDLE token, LPCWSTR exePath) {
 	STARTUPINFO startupInfo = { };
 	PROCESS_INFORMATION processInfo = { };
 	if (!CreateProcessAsUser(token, exePath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return processInfo;
@@ -311,7 +311,7 @@ BOOL EzLaunchWithUAC(LPCWSTR exePath) {
 			return FALSE;
 		}
 		else {
-			EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+			throw EzError::FromCode(lastError, __FILE__, __LINE__);
 		}
 	}
 	return TRUE;
@@ -349,7 +349,7 @@ void EzMakeTokenInteractive(HANDLE token) {
 	// Get current session id.
 	DWORD activeConsoleSessionId = WTSGetActiveConsoleSessionId();
 	if (activeConsoleSessionId == 0xFFFFFFFF) {
-		throw EzError("Could not create an interactive token because there is no active session currently.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("Could not create an interactive token because there is no active session currently.", __FILE__, __LINE__);
 	}
 
 	// Change the session ID of the token to the current session ID.
@@ -362,7 +362,7 @@ void EzGiveTokenSystemIntegrity(HANDLE token) {
 	// Lookup the system integrity level SID.
 	PSID systemIntegritySid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-16-16384", &systemIntegritySid)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	// Assign system integrity level to the token.
@@ -428,37 +428,37 @@ HANDLE EzCreateGodToken() {
 	if (!ConvertStringSidToSid(L"S-1-5-18", &systemUserSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	PSID administratorsGroupSid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-5-32-544", &administratorsGroupSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	PSID authenticatedUsersGroupSid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-5-11", &authenticatedUsersGroupSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	PSID everyoneGroupSid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-1-0", &everyoneGroupSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	PSID systemIntegrityLevelSid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-16-16384", &systemIntegrityLevelSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 	PSID trustedInstallerUserSid = NULL;
 	if (!ConvertStringSidToSid(L"S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464", &trustedInstallerUserSid)) {
 		lastError = GetLastError();
 		EzStopImpersonating();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	ACCESS_MASK desiredAccess = TOKEN_ALL_ACCESS;
@@ -562,7 +562,7 @@ HANDLE EzCreateGodToken() {
 	HANDLE token = 0;
 	nt = NtCreateToken(&token, desiredAccess, &objectAttributes, tokenType, &authenticationID, &expirationTime, &tokenUser, tokenGroups, tokenPrivileges, &tokenOwner, &tokenPrimaryGroup, tokenDefaultDacl, tokenSource);
 	if (FAILED(nt)) {
-		EzError::ThrowFromNT(nt, __FILE__, __LINE__);
+		throw EzError::FromNT(nt, __FILE__, __LINE__);
 	}
 
 	DWORD activeConsoleSessionId = WTSGetActiveConsoleSessionId();

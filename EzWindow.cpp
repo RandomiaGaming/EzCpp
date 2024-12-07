@@ -23,7 +23,7 @@ ATOM EzRegisterClass(const EzClassSettings* settings) {
 		// No need to free cursors as they are reused across the application instead of being copied for each call to LoadCursor.
 		wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
 		if (wc.hCursor == NULL) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 	}
 	else {
@@ -33,7 +33,7 @@ ATOM EzRegisterClass(const EzClassSettings* settings) {
 		// No need to free this brush in normal circumstances because UnregisterClass will free it.
 		wc.hbrBackground = CreateSolidBrush(RGB(settings->BackColorR, settings->BackColorG, settings->BackColorB));
 		if (wc.hbrBackground == NULL) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 	}
 	else {
@@ -64,13 +64,13 @@ ATOM EzRegisterClass(const EzClassSettings* settings) {
 	wc.hInstance = GetModuleHandleW(NULL); // WndProc is in the current hInstance.
 	if (wc.hInstance == NULL) {
 		DeleteObject(wc.hbrBackground);
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	wc.lpszMenuName = NULL; // Windows of this class have no default menu.
 
 	ATOM output = RegisterClass(&wc);
 	if (output == 0) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return output;
@@ -162,7 +162,7 @@ HWND EzCreateWindow(const EzWindowSettings* settings) {
 		NULL // No additional data.
 	);
 	if (output == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return output;
 }
@@ -171,13 +171,13 @@ void EzShowWindow(HWND window, int showCommand) {
 	ShowWindow(window, showCommand);
 	DWORD lastError = GetLastError();
 	if (lastError != 0) {
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 }
 
 BOOL EzMessagePumpOne(HWND window, BOOL wait) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
 	}
 	if (wait)
 	{
@@ -203,7 +203,7 @@ BOOL EzMessagePumpOne(HWND window, BOOL wait) {
 }
 BOOL EzMessagePumpAll(HWND window) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
 	}
 	BOOL output = FALSE;
 	MSG message = { };
@@ -216,7 +216,7 @@ BOOL EzMessagePumpAll(HWND window) {
 }
 BOOL EzMessagePumpRun(HWND window) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
 	}
 	BOOL output = FALSE;
 	MSG message = { };
@@ -282,7 +282,7 @@ void EzSetWindowData(HWND window, void* data) {
 	if (SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(data)) == 0) {
 		lastError = GetLastError();
 		if (lastError != 0) {
-			EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+			throw EzError::FromCode(lastError, __FILE__, __LINE__);
 		}
 	}
 }
@@ -294,7 +294,7 @@ void* EzGetWindowData(HWND window) {
 	if (userData == 0) {
 		lastError = GetLastError();
 		if (lastError != 0) {
-			EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+			throw EzError::FromCode(lastError, __FILE__, __LINE__);
 		}
 	}
 

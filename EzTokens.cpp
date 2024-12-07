@@ -14,13 +14,13 @@ static void* GetTokenInfo(HANDLE token, TOKEN_INFORMATION_CLASS desiredInfo) {
 	DWORD length = 0;
 	GetTokenInformation(token, desiredInfo, NULL, 0, &length);
 	if (length == 0) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	void* output = new BYTE[length];
 	if (!GetTokenInformation(token, desiredInfo, output, length, &length)) {
 		delete[] output;
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return output;
@@ -92,11 +92,17 @@ TOKEN_GROUPS_AND_PRIVILEGES EzGetTokenGroupsAndPrivileges(HANDLE token) {
 	delete[] outputPtr;
 	return output;
 }
+void EzGetTokenSessionReference(HANDLE token) {
+
+}
 BOOL EzGetTokenSandBoxInert(HANDLE token) {
 	BOOL* outputPtr = reinterpret_cast<BOOL*>(GetTokenInfo(token, TokenSandBoxInert));
 	BOOL output = *outputPtr;
 	delete[] outputPtr;
 	return output;
+}
+void EzGetTokenAuditPolicy(HANDLE token) {
+
 }
 LUID EzGetTokenOrigin(HANDLE token) {
 	TOKEN_ORIGIN* outputPtr = reinterpret_cast<TOKEN_ORIGIN*>(GetTokenInfo(token, TokenOrigin));
@@ -194,6 +200,12 @@ CLAIM_SECURITY_ATTRIBUTES_INFORMATION* EzGetTokenUserClaimAttributes(HANDLE toke
 CLAIM_SECURITY_ATTRIBUTES_INFORMATION* EzGetTokenDeviceClaimAttributes(HANDLE token) {
 	return reinterpret_cast<CLAIM_SECURITY_ATTRIBUTES_INFORMATION*>(GetTokenInfo(token, TokenDeviceClaimAttributes));
 }
+void EzGetTokenRestrictedUserClaimAttributes(HANDLE token) {
+
+}
+void EzGetTokenRestrictedDeviceClaimAttributes(HANDLE token) {
+
+}
 TOKEN_GROUPS* EzGetTokenDeviceGroups(HANDLE token) {
 	return reinterpret_cast<TOKEN_GROUPS*>(GetTokenInfo(token, TokenDeviceGroups));
 }
@@ -230,19 +242,33 @@ TOKEN_BNO_ISOLATION_INFORMATION EzGetTokenBnoIsolation(HANDLE token) {
 	delete[] outputPtr;
 	return output;
 }
+void EzGetTokenChildProcessFlags(HANDLE token) {
+
+}
+void EzGetTokenIsLessPrivilegedAppContainer(HANDLE token) {
+
+}
 BOOL EzGetTokenIsSandboxed(HANDLE token) {
 	BOOL* outputPtr = reinterpret_cast<BOOL*>(GetTokenInfo(token, TokenIsSandboxed));
 	BOOL output = *outputPtr;
 	delete[] outputPtr;
 	return output;
 }
+void EzGetTokenIsAppSilo(HANDLE token) {
 
+}
+void EzGetTokenLoggingInformation(HANDLE token) {
+
+}
+void EzGetMaxTokenInfoClass(HANDLE token) {
+
+}
 
 
 // Setting info about tokens
 static void SetTokenInfo(HANDLE token, TOKEN_INFORMATION_CLASS targetClass, void* newInfo, DWORD newInfoLength) {
 	if (!SetTokenInformation(token, targetClass, newInfo, newInfoLength)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 
@@ -285,8 +311,14 @@ void EzSetTokenSessionId(HANDLE token, DWORD value) {
 void EzSetTokenGroupsAndPrivileges(HANDLE token, TOKEN_GROUPS_AND_PRIVILEGES value) {
 	SetTokenInfo(token, TokenGroupsAndPrivileges, &value, sizeof(TOKEN_GROUPS_AND_PRIVILEGES));
 }
+void EzSetTokenSessionReference(HANDLE token /* void value */) {
+
+}
 void EzSetTokenSandBoxInert(HANDLE token, BOOL value) {
 	SetTokenInfo(token, TokenSandBoxInert, &value, sizeof(BOOL));
+}
+void EzSetTokenAuditPolicy(HANDLE token /* void value */) {
+
 }
 void EzSetTokenOrigin(HANDLE token, LUID value) {
 	SetTokenInfo(token, TokenOrigin, &value, sizeof(LUID));
@@ -342,6 +374,12 @@ void EzSetTokenUserClaimAttributes(HANDLE token, CLAIM_SECURITY_ATTRIBUTES_INFOR
 void EzSetTokenDeviceClaimAttributes(HANDLE token, CLAIM_SECURITY_ATTRIBUTES_INFORMATION* value) {
 	SetTokenInfo(token, TokenDeviceClaimAttributes, value, sizeof(CLAIM_SECURITY_ATTRIBUTES_INFORMATION));
 }
+void EzSetTokenRestrictedUserClaimAttributes(HANDLE token /* void value */) {
+
+}
+void EzSetTokenRestrictedDeviceClaimAttributes(HANDLE token /* void value */) {
+
+}
 void EzSetTokenDeviceGroups(HANDLE token, TOKEN_GROUPS* value) {
 	SetTokenInfo(token, TokenDeviceGroups, value, sizeof(TOKEN_GROUPS) + ((value->GroupCount - 1) * sizeof(SID_AND_ATTRIBUTES)));
 }
@@ -366,8 +404,170 @@ void EzSetTokenSingletonAttributes(HANDLE token, CLAIM_SECURITY_ATTRIBUTES_INFOR
 void EzSetTokenBnoIsolation(HANDLE token, TOKEN_BNO_ISOLATION_INFORMATION value) {
 	SetTokenInfo(token, TokenBnoIsolation, &value, sizeof(TOKEN_BNO_ISOLATION_INFORMATION));
 }
+void EzSetTokenChildProcessFlags(HANDLE token /* void value */) {
+
+}
+void EzSetTokenIsLessPrivilegedAppContainer(HANDLE token /* void value */) {
+
+}
 void EzSetTokenIsSandboxed(HANDLE token, BOOL value) {
 	SetTokenInfo(token, TokenIsSandboxed, &value, sizeof(BOOL));
+}
+void EzSetTokenIsAppSilo(HANDLE token /* void value */) {
+
+}
+void EzSetTokenLoggingInformation(HANDLE token /* void value */) {
+
+}
+void EzSetMaxTokenInfoClass(HANDLE token /* void value */) {
+
+}
+
+
+
+// Printing helper methods
+static void _PrintSidAndAttributesA(SID_AND_ATTRIBUTES value, std::ostream& outputStream) {
+	outputStream << "    SID: "; EzPrintSidA(value.Sid, outputStream); outputStream << std::endl;
+	outputStream << "    Attributes: "; EzPrintBinaryA(reinterpret_cast<BYTE*>(&value.Attributes), sizeof(DWORD), outputStream); outputStream << std::endl;
+}
+static void _PrintTokenGroupsStarA(TOKEN_GROUPS* value, std::ostream& outputStream) {
+	outputStream << " [" << value->GroupCount << "]:"; if (value->GroupCount == 0) { outputStream << " None"; } outputStream << std::endl;
+	for (DWORD i = 0; i < value->GroupCount; i++)
+	{
+		if (i != 0) { outputStream << std::endl; }
+		_PrintSidAndAttributesA(value->Groups[i], outputStream);
+	}
+}
+static void _PrintLuidAndAttributesA(LUID_AND_ATTRIBUTES value, std::ostream& outputStream) {
+	outputStream << "    LUID: "; EzPrintLuidA(value.Luid, outputStream); outputStream << std::endl;
+	outputStream << "    Attributes: "; EzPrintBinaryA(reinterpret_cast<BYTE*>(&value.Attributes), 4, outputStream); outputStream << std::endl;
+}
+static void _PrintTokenPrivilegesStarA(TOKEN_PRIVILEGES* value, std::ostream& outputStream) {
+	outputStream << " [" << value->PrivilegeCount << "]:"; if (value->PrivilegeCount == 0) { outputStream << " None"; } outputStream << std::endl;
+	for (DWORD i = 0; i < value->PrivilegeCount; i++)
+	{
+		if (i != 0) { outputStream << std::endl; }
+		_PrintLuidAndAttributesA(value->Privileges[i], outputStream);
+	}
+}
+static void _PrintTokenDefaultDaclStarA(TOKEN_DEFAULT_DACL* value, std::ostream& outputStream) {
+	if (value->DefaultDacl == NULL) {
+		outputStream << "Token Default DACL: NULL" << std::endl;
+	}
+	else {
+		outputStream << "Token Default DACL:" << std::endl;
+		outputStream << "    ACL Revision: " << value->DefaultDacl->AclRevision << std::endl;
+		outputStream << "    ACL Size: " << value->DefaultDacl->AclSize << std::endl;
+		outputStream << "    ACE List [" << value->DefaultDacl->AceCount << "]:"; if (value->DefaultDacl->AceCount == 0) { outputStream << " None"; } outputStream << std::endl;
+		for (DWORD i = 0; i < value->DefaultDacl->AceCount; i++)
+		{
+			if (i != 0) { outputStream << std::endl; }
+			ACE_HEADER* currentACE = NULL;
+			GetAce(value->DefaultDacl, i, reinterpret_cast<void**>(&currentACE));
+			outputStream << "    Type: " << currentACE->AceType << std::endl;
+			outputStream << "    Flags: " << currentACE->AceFlags << std::endl;
+			outputStream << "    Size: " << currentACE->AceSize << std::endl;
+		}
+	}
+}
+static void _PrintTokenSourceA(TOKEN_SOURCE value, std::ostream& outputStream) {
+	CHAR safeSourceName[9];
+	memcpy(safeSourceName, value.SourceName, 8);
+	safeSourceName[8] = '\0';
+
+	outputStream << "Token Source:" << std::endl;
+	outputStream << "    Name: " << safeSourceName << std::endl;
+	outputStream << "    Identifier: "; EzPrintLuidA(value.SourceIdentifier, outputStream); outputStream << std::endl;
+}
+static void _PrintTokenTypeA(TOKEN_TYPE value, std::ostream& outputStream) {
+	outputStream << "Token Type: ";
+	if (value == TokenPrimary) {
+		outputStream << "Primary";
+	}
+	else if (value == TokenImpersonation) {
+		outputStream << "Impersonation";
+	}
+	else {
+		outputStream << "Invalid";
+	}
+	outputStream << std::endl;
+}
+static void _PrintSecurityImpressionLevelA(SECURITY_IMPERSONATION_LEVEL value, std::ostream& outputStream) {
+	outputStream << "Token Impersonation Level: ";
+	if (value == SecurityAnonymous) {
+		outputStream << "Anonymous";
+	}
+	else if (value == SecurityIdentification) {
+		outputStream << "Identification";
+	}
+	else if (value == SecurityImpersonation) {
+		outputStream << "Impersonation";
+	}
+	else if (value == SecurityDelegation) {
+		outputStream << "Delegation";
+	}
+	else {
+		outputStream << "Invalid";
+	}
+	outputStream << std::endl;
+}
+static void _PrintTokenStatisticsA(TOKEN_STATISTICS value, std::ostream& outputStream) {
+	outputStream << "Token Statistics:" << std::endl;
+	outputStream << "    Token ID: "; EzPrintLuidA(value.TokenId, outputStream); outputStream << std::endl;
+	outputStream << "    Authentication ID: "; EzPrintLuidA(value.AuthenticationId, outputStream); outputStream << std::endl;
+	outputStream << "    Token Type: ";
+	if (value.TokenType == TokenPrimary) {
+		outputStream << "Primary";
+	}
+	else if (value.TokenType == TokenImpersonation) {
+		outputStream << "Impersonation";
+	}
+	else {
+		outputStream << "Invalid";
+	}
+	outputStream << std::endl;
+	if (value.TokenType != TokenImpersonation) {
+		outputStream << "    Impersonation Level: N/A" << std::endl;
+	}
+	else {
+		outputStream << "    Impersonation Level: ";
+		if (value.ImpersonationLevel == SecurityAnonymous) {
+			outputStream << "Anonymous";
+		}
+		else if (value.ImpersonationLevel == SecurityIdentification) {
+			outputStream << "Identification";
+		}
+		else if (value.ImpersonationLevel == SecurityImpersonation) {
+			outputStream << "Impersonation";
+		}
+		else if (value.ImpersonationLevel == SecurityDelegation) {
+			outputStream << "Delegation";
+		}
+		else {
+			outputStream << "Invalid";
+		}
+		outputStream << std::endl;
+	}
+	outputStream << "    Dynamic Charged: " << value.DynamicCharged << std::endl;
+	outputStream << "    Dynamic Available: " << value.DynamicAvailable << std::endl;
+	outputStream << "    Group Count: " << value.GroupCount << std::endl;
+	outputStream << "    Privilege Count: " << value.PrivilegeCount << std::endl;
+	outputStream << "    Modified ID: "; EzPrintLuidA(value.ModifiedId, outputStream); outputStream << std::endl;
+}
+static void _PrintTokenGroupsAndPrivilegesA(TOKEN_GROUPS_AND_PRIVILEGES value, std::ostream& outputStream) {
+
+}
+static void _PrintTokenElevationTypeA(TOKEN_ELEVATION_TYPE value, std::ostream& outputStream) {
+
+}
+static void _PrintTokenAccessInformationA(TOKEN_ACCESS_INFORMATION value, std::ostream& outputStream) {
+
+}
+static void _PrintClaimSecurityAttributesInformationA(CLAIM_SECURITY_ATTRIBUTES_INFORMATION value, std::ostream& outputStream) {
+
+}
+static void _PrintBnoIsolationInformationA(TOKEN_BNO_ISOLATION_INFORMATION value, std::ostream& outputStream) {
+
 }
 
 
@@ -378,8 +578,7 @@ void EzPrintTokenUserA(HANDLE token, std::ostream& outputStream) {
 		SID_AND_ATTRIBUTES tokenUser = EzGetTokenUser(token);
 
 		outputStream << "Token User:" << std::endl;
-		outputStream << "    SID: "; EzPrintSidA(tokenUser.Sid, outputStream); outputStream << std::endl;
-		outputStream << "    Attributes: "; EzPrintBinaryA(reinterpret_cast<BYTE*>(&tokenUser.Attributes), sizeof(DWORD), outputStream); outputStream << std::endl;
+		_PrintSidAndAttributesA(tokenUser, outputStream);
 	}
 	catch (EzError error) { error.Print(); }
 }
@@ -387,13 +586,8 @@ void EzPrintTokenGroupsA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_GROUPS* tokenGroups = EzGetTokenGroups(token);
 
-		outputStream << "Token Groups [" << tokenGroups->GroupCount << "]:"; if (tokenGroups->GroupCount == 0) { outputStream << " None"; } outputStream << std::endl;
-		for (DWORD i = 0; i < tokenGroups->GroupCount; i++)
-		{
-			if (i != 0) { outputStream << std::endl; }
-			outputStream << "   SID: "; EzPrintSidA(tokenGroups->Groups[i].Sid, outputStream); outputStream << std::endl;
-			outputStream << "   Attributes: "; EzPrintBinaryA(reinterpret_cast<BYTE*>(&tokenGroups->Groups[i].Attributes), sizeof(DWORD), outputStream); outputStream << std::endl;
-		}
+		outputStream << "Token Groups";
+		_PrintTokenGroupsStarA(tokenGroups, outputStream);
 
 		delete[] tokenGroups;
 	}
@@ -403,13 +597,8 @@ void EzPrintTokenPrivilegesA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_PRIVILEGES* tokenPrivileges = EzGetTokenPrivileges(token);
 
-		outputStream << "Token Privileges [" << tokenPrivileges->PrivilegeCount << "]:"; if (tokenPrivileges->PrivilegeCount == 0) { outputStream << " None"; } outputStream << std::endl;
-		for (DWORD i = 0; i < tokenPrivileges->PrivilegeCount; i++)
-		{
-			if (i != 0) { outputStream << std::endl; }
-			outputStream << "    LUID: "; EzPrintLuidA(tokenPrivileges->Privileges[i].Luid, outputStream); outputStream << std::endl;
-			outputStream << "    Attributes: "; EzPrintBinaryA(reinterpret_cast<BYTE*>(&tokenPrivileges->Privileges[i].Attributes), 4, outputStream); outputStream << std::endl;
-		}
+		outputStream << "Token Privileges";
+		_PrintTokenPrivilegesStarA(tokenPrivileges, outputStream);
 
 		delete[] tokenPrivileges;
 	}
@@ -435,24 +624,7 @@ void EzPrintTokenDefaultDaclA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_DEFAULT_DACL* tokenDefaultDacl = EzGetTokenDefaultDacl(token);
 
-		if (tokenDefaultDacl->DefaultDacl == NULL) {
-			outputStream << "Token Default DACL: NUL" << std::endl;
-		}
-		else {
-			outputStream << "Token Default DACL:" << std::endl;
-			outputStream << "    ACL Revision: " << tokenDefaultDacl->DefaultDacl->AclRevision << std::endl;
-			outputStream << "    ACL Size: " << tokenDefaultDacl->DefaultDacl->AclSize << std::endl;
-			outputStream << "    ACE List [" << tokenDefaultDacl->DefaultDacl->AceCount << "]:"; if (tokenDefaultDacl->DefaultDacl->AceCount == 0) { outputStream << " None"; } outputStream << std::endl;
-			for (DWORD i = 0; i < tokenDefaultDacl->DefaultDacl->AceCount; i++)
-			{
-				if (i != 0) { outputStream << std::endl; }
-				ACE_HEADER* currentACE = NULL;
-				GetAce(tokenDefaultDacl->DefaultDacl, i, reinterpret_cast<void**>(&currentACE));
-				outputStream << "    Type: " << currentACE->AceType << std::endl;
-				outputStream << "    Flags: " << currentACE->AceFlags << std::endl;
-				outputStream << "    Size: " << currentACE->AceSize << std::endl;
-			}
-		}
+		_PrintTokenDefaultDaclStarA(tokenDefaultDacl, outputStream);
 
 		delete[] tokenDefaultDacl;
 	}
@@ -462,13 +634,7 @@ void EzPrintTokenSourceA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_SOURCE tokenSource = EzGetTokenSource(token);
 
-		CHAR safeSourceName[9];
-		memcpy(safeSourceName, tokenSource.SourceName, 8);
-		safeSourceName[8] = '\0';
-
-		outputStream << "Token Source:" << std::endl;
-		outputStream << "    Name: " << safeSourceName << std::endl;
-		outputStream << "    Identifier: "; EzPrintLuidA(tokenSource.SourceIdentifier, outputStream); outputStream << std::endl;
+		_PrintTokenSourceA(tokenSource, outputStream);
 	}
 	catch (EzError error) { error.Print(); }
 }
@@ -476,17 +642,7 @@ void EzPrintTokenTypeA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_TYPE tokenType = EzGetTokenType(token);
 
-		outputStream << "Token Type: ";
-		if (tokenType == TokenPrimary) {
-			outputStream << "Primary";
-		}
-		else if (tokenType == TokenImpersonation) {
-			outputStream << "Impersonation";
-		}
-		else {
-			outputStream << "Invalid";
-		}
-		outputStream << std::endl;
+		_PrintTokenTypeA(tokenType, outputStream);
 	}
 	catch (EzError error) { error.Print(); }
 }
@@ -500,23 +656,7 @@ void EzPrintTokenImpersonationLevelA(HANDLE token, std::ostream& outputStream) {
 
 		SECURITY_IMPERSONATION_LEVEL tokenImpersonationLevel = EzGetTokenImpersonationLevel(token);
 
-		outputStream << "Token Impersonation Level: ";
-		if (tokenImpersonationLevel == SecurityAnonymous) {
-			outputStream << "Anonymous";
-		}
-		else if (tokenImpersonationLevel == SecurityIdentification) {
-			outputStream << "Identification";
-		}
-		else if (tokenImpersonationLevel == SecurityImpersonation) {
-			outputStream << "Impersonation";
-		}
-		else if (tokenImpersonationLevel == SecurityDelegation) {
-			outputStream << "Delegation";
-		}
-		else {
-			outputStream << "Invalid";
-		}
-		outputStream << std::endl;
+		_PrintSecurityImpressionLevelA(tokenImpersonationLevel, outputStream);
 	}
 	catch (EzError error) { error.Print(); }
 }
@@ -524,47 +664,7 @@ void EzPrintTokenStatisticsA(HANDLE token, std::ostream& outputStream) {
 	try {
 		TOKEN_STATISTICS tokenStatistics = EzGetTokenStatistics(token);
 
-		outputStream << "Token Statistics:" << std::endl;
-		outputStream << "    Token ID: "; EzPrintLuidA(tokenStatistics.TokenId, outputStream); outputStream << std::endl;
-		outputStream << "    Authentication ID: "; EzPrintLuidA(tokenStatistics.AuthenticationId, outputStream); outputStream << std::endl;
-		outputStream << "    Token Type: ";
-		if (tokenStatistics.TokenType == TokenPrimary) {
-			outputStream << "Primary";
-		}
-		else if (tokenStatistics.TokenType == TokenImpersonation) {
-			outputStream << "Impersonation";
-		}
-		else {
-			outputStream << "Invalid";
-		}
-		outputStream << std::endl;
-		if (tokenStatistics.TokenType != TokenImpersonation) {
-			outputStream << "    Impersonation Level: N/A" << std::endl;
-		}
-		else {
-			outputStream << "    Impersonation Level: ";
-			if (tokenStatistics.ImpersonationLevel == SecurityAnonymous) {
-				outputStream << "Anonymous";
-			}
-			else if (tokenStatistics.ImpersonationLevel == SecurityIdentification) {
-				outputStream << "Identification";
-			}
-			else if (tokenStatistics.ImpersonationLevel == SecurityImpersonation) {
-				outputStream << "Impersonation";
-			}
-			else if (tokenStatistics.ImpersonationLevel == SecurityDelegation) {
-				outputStream << "Delegation";
-			}
-			else {
-				outputStream << "Invalid";
-			}
-			outputStream << std::endl;
-		}
-		outputStream << "    Dynamic Charged: " << tokenStatistics.DynamicCharged << std::endl;
-		outputStream << "    Dynamic Available: " << tokenStatistics.DynamicAvailable << std::endl;
-		outputStream << "    Group Count: " << tokenStatistics.GroupCount << std::endl;
-		outputStream << "    Privilege Count: " << tokenStatistics.PrivilegeCount << std::endl;
-		outputStream << "    Modified ID: "; EzPrintLuidA(tokenStatistics.ModifiedId, outputStream); outputStream << std::endl;
+		_PrintTokenStatisticsA(tokenStatistics, outputStream);
 	}
 	catch (EzError error) { error.Print(); }
 }
@@ -1544,110 +1644,110 @@ void EzPrintMaxTokenInfoClassW(HANDLE token, std::wostream& outputStream) {
 
 // General printing functions to print all info
 void EzPrintTokenInfoA(HANDLE token, std::ostream& outputStream) {
-	outputStream << "Token Handle: "; EzPrintHexA(reinterpret_cast<BYTE*>(&token), sizeof(HANDLE), outputStream); outputStream << std::endl << std::endl;
+	outputStream << "Token Handle: "; EzPrintHexA(reinterpret_cast<BYTE*>(&token), sizeof(HANDLE), outputStream); outputStream << std::endl;
 
-	EzPrintTokenUserA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenGroupsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrivilegesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenOwnerA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrimaryGroupA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDefaultDaclA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSourceA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenTypeA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenImpersonationLevelA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenStatisticsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedSidsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSessionIdA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenGroupsAndPrivilegesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSessionReferenceA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSandBoxInertA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAuditPolicyA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenOriginA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenElevationTypeA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLinkedTokenA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenElevationA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenHasRestrictionsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAccessInformationA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenVirtualizationAllowedA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenVirtualizationEnabledA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIntegrityLevelA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenUIAccessA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenMandatoryPolicyA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLogonSidA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsAppContainerA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenCapabilitiesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAppContainerSidA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAppContainerNumberA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenUserClaimAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDeviceClaimAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedUserClaimAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedDeviceClaimAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDeviceGroupsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedDeviceGroupsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSecurityAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsRestrictedA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenProcessTrustLevelA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrivateNameSpaceA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSingletonAttributesA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenBnoIsolationA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenChildProcessFlagsA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsLessPrivilegedAppContainerA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsSandboxedA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsAppSiloA(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLoggingInformationA(token, outputStream); outputStream << std::endl;
-	EzPrintMaxTokenInfoClassA(token, outputStream); outputStream << std::endl;
+	EzPrintTokenUserA(token, outputStream);
+	EzPrintTokenGroupsA(token, outputStream);
+	EzPrintTokenPrivilegesA(token, outputStream);
+	EzPrintTokenOwnerA(token, outputStream);
+	EzPrintTokenPrimaryGroupA(token, outputStream);
+	EzPrintTokenDefaultDaclA(token, outputStream);
+	EzPrintTokenSourceA(token, outputStream);
+	EzPrintTokenTypeA(token, outputStream);
+	EzPrintTokenImpersonationLevelA(token, outputStream);
+	EzPrintTokenStatisticsA(token, outputStream);
+	EzPrintTokenRestrictedSidsA(token, outputStream);
+	EzPrintTokenSessionIdA(token, outputStream);
+	EzPrintTokenGroupsAndPrivilegesA(token, outputStream);
+	EzPrintTokenSessionReferenceA(token, outputStream);
+	EzPrintTokenSandBoxInertA(token, outputStream);
+	EzPrintTokenAuditPolicyA(token, outputStream);
+	EzPrintTokenOriginA(token, outputStream);
+	EzPrintTokenElevationTypeA(token, outputStream);
+	EzPrintTokenLinkedTokenA(token, outputStream);
+	EzPrintTokenElevationA(token, outputStream);
+	EzPrintTokenHasRestrictionsA(token, outputStream);
+	EzPrintTokenAccessInformationA(token, outputStream);
+	EzPrintTokenVirtualizationAllowedA(token, outputStream);
+	EzPrintTokenVirtualizationEnabledA(token, outputStream);
+	EzPrintTokenIntegrityLevelA(token, outputStream);
+	EzPrintTokenUIAccessA(token, outputStream);
+	EzPrintTokenMandatoryPolicyA(token, outputStream);
+	EzPrintTokenLogonSidA(token, outputStream);
+	EzPrintTokenIsAppContainerA(token, outputStream);
+	EzPrintTokenCapabilitiesA(token, outputStream);
+	EzPrintTokenAppContainerSidA(token, outputStream);
+	EzPrintTokenAppContainerNumberA(token, outputStream);
+	EzPrintTokenUserClaimAttributesA(token, outputStream);
+	EzPrintTokenDeviceClaimAttributesA(token, outputStream);
+	EzPrintTokenRestrictedUserClaimAttributesA(token, outputStream);
+	EzPrintTokenRestrictedDeviceClaimAttributesA(token, outputStream);
+	EzPrintTokenDeviceGroupsA(token, outputStream);
+	EzPrintTokenRestrictedDeviceGroupsA(token, outputStream);
+	EzPrintTokenSecurityAttributesA(token, outputStream);
+	EzPrintTokenIsRestrictedA(token, outputStream);
+	EzPrintTokenProcessTrustLevelA(token, outputStream);
+	EzPrintTokenPrivateNameSpaceA(token, outputStream);
+	EzPrintTokenSingletonAttributesA(token, outputStream);
+	EzPrintTokenBnoIsolationA(token, outputStream);
+	EzPrintTokenChildProcessFlagsA(token, outputStream);
+	EzPrintTokenIsLessPrivilegedAppContainerA(token, outputStream);
+	EzPrintTokenIsSandboxedA(token, outputStream);
+	EzPrintTokenIsAppSiloA(token, outputStream);
+	EzPrintTokenLoggingInformationA(token, outputStream);
+	EzPrintMaxTokenInfoClassA(token, outputStream);
 }
 void EzPrintTokenInfoW(HANDLE token, std::wostream& outputStream) {
-	outputStream << L"Token Handle: "; EzPrintHexW(reinterpret_cast<BYTE*>(&token), sizeof(HANDLE), outputStream); outputStream << std::endl << std::endl;
+	outputStream << L"Token Handle: "; EzPrintHexW(reinterpret_cast<BYTE*>(&token), sizeof(HANDLE), outputStream); outputStream << std::endl;
 
-	EzPrintTokenUserW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenGroupsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrivilegesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenOwnerW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrimaryGroupW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDefaultDaclW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSourceW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenTypeW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenImpersonationLevelW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenStatisticsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedSidsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSessionIdW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenGroupsAndPrivilegesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSessionReferenceW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSandBoxInertW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAuditPolicyW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenOriginW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenElevationTypeW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLinkedTokenW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenElevationW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenHasRestrictionsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAccessInformationW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenVirtualizationAllowedW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenVirtualizationEnabledW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIntegrityLevelW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenUIAccessW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenMandatoryPolicyW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLogonSidW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsAppContainerW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenCapabilitiesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAppContainerSidW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenAppContainerNumberW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenUserClaimAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDeviceClaimAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedUserClaimAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedDeviceClaimAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenDeviceGroupsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenRestrictedDeviceGroupsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSecurityAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsRestrictedW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenProcessTrustLevelW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenPrivateNameSpaceW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenSingletonAttributesW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenBnoIsolationW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenChildProcessFlagsW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsLessPrivilegedAppContainerW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsSandboxedW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenIsAppSiloW(token, outputStream); outputStream << std::endl;
-	EzPrintTokenLoggingInformationW(token, outputStream); outputStream << std::endl;
-	EzPrintMaxTokenInfoClassW(token, outputStream); outputStream << std::endl;
+	EzPrintTokenUserW(token, outputStream);
+	EzPrintTokenGroupsW(token, outputStream);
+	EzPrintTokenPrivilegesW(token, outputStream);
+	EzPrintTokenOwnerW(token, outputStream);
+	EzPrintTokenPrimaryGroupW(token, outputStream);
+	EzPrintTokenDefaultDaclW(token, outputStream);
+	EzPrintTokenSourceW(token, outputStream);
+	EzPrintTokenTypeW(token, outputStream);
+	EzPrintTokenImpersonationLevelW(token, outputStream);
+	EzPrintTokenStatisticsW(token, outputStream);
+	EzPrintTokenRestrictedSidsW(token, outputStream);
+	EzPrintTokenSessionIdW(token, outputStream);
+	EzPrintTokenGroupsAndPrivilegesW(token, outputStream);
+	EzPrintTokenSessionReferenceW(token, outputStream);
+	EzPrintTokenSandBoxInertW(token, outputStream);
+	EzPrintTokenAuditPolicyW(token, outputStream);
+	EzPrintTokenOriginW(token, outputStream);
+	EzPrintTokenElevationTypeW(token, outputStream);
+	EzPrintTokenLinkedTokenW(token, outputStream);
+	EzPrintTokenElevationW(token, outputStream);
+	EzPrintTokenHasRestrictionsW(token, outputStream);
+	EzPrintTokenAccessInformationW(token, outputStream);
+	EzPrintTokenVirtualizationAllowedW(token, outputStream);
+	EzPrintTokenVirtualizationEnabledW(token, outputStream);
+	EzPrintTokenIntegrityLevelW(token, outputStream);
+	EzPrintTokenUIAccessW(token, outputStream);
+	EzPrintTokenMandatoryPolicyW(token, outputStream);
+	EzPrintTokenLogonSidW(token, outputStream);
+	EzPrintTokenIsAppContainerW(token, outputStream);
+	EzPrintTokenCapabilitiesW(token, outputStream);
+	EzPrintTokenAppContainerSidW(token, outputStream);
+	EzPrintTokenAppContainerNumberW(token, outputStream);
+	EzPrintTokenUserClaimAttributesW(token, outputStream);
+	EzPrintTokenDeviceClaimAttributesW(token, outputStream);
+	EzPrintTokenRestrictedUserClaimAttributesW(token, outputStream);
+	EzPrintTokenRestrictedDeviceClaimAttributesW(token, outputStream);
+	EzPrintTokenDeviceGroupsW(token, outputStream);
+	EzPrintTokenRestrictedDeviceGroupsW(token, outputStream);
+	EzPrintTokenSecurityAttributesW(token, outputStream);
+	EzPrintTokenIsRestrictedW(token, outputStream);
+	EzPrintTokenProcessTrustLevelW(token, outputStream);
+	EzPrintTokenPrivateNameSpaceW(token, outputStream);
+	EzPrintTokenSingletonAttributesW(token, outputStream);
+	EzPrintTokenBnoIsolationW(token, outputStream);
+	EzPrintTokenChildProcessFlagsW(token, outputStream);
+	EzPrintTokenIsLessPrivilegedAppContainerW(token, outputStream);
+	EzPrintTokenIsSandboxedW(token, outputStream);
+	EzPrintTokenIsAppSiloW(token, outputStream);
+	EzPrintTokenLoggingInformationW(token, outputStream);
+	EzPrintMaxTokenInfoClassW(token, outputStream);
 }

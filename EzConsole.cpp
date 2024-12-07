@@ -6,12 +6,12 @@
 EzConsole::Color EzConsole::GetColor() {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo = { };
 	if (!GetConsoleScreenBufferInfo(stdoutHandle, &consoleScreenBufferInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return static_cast<EzConsole::Color>(consoleScreenBufferInfo.wAttributes &= 0x000F);
@@ -19,30 +19,30 @@ EzConsole::Color EzConsole::GetColor() {
 void EzConsole::SetColor(EzConsole::Color color) {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo = { };
 	if (!GetConsoleScreenBufferInfo(stdoutHandle, &consoleScreenBufferInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	consoleScreenBufferInfo.wAttributes &= 0xFFF0;
 	consoleScreenBufferInfo.wAttributes |= static_cast<WORD>(color);
 
 	if (!SetConsoleTextAttribute(stdoutHandle, consoleScreenBufferInfo.wAttributes)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 EzConsole::Color EzConsole::GetBackgroundColor() {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo = { };
 	if (!GetConsoleScreenBufferInfo(stdoutHandle, &consoleScreenBufferInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	consoleScreenBufferInfo.wAttributes &= 0x00F0;
@@ -51,44 +51,44 @@ EzConsole::Color EzConsole::GetBackgroundColor() {
 void EzConsole::SetBackgroundColor(EzConsole::Color color) {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo = { };
 	if (!GetConsoleScreenBufferInfo(stdoutHandle, &consoleScreenBufferInfo)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	consoleScreenBufferInfo.wAttributes &= 0xFF0F;
 	consoleScreenBufferInfo.wAttributes |= static_cast<WORD>(color) << 4;
 
 	if (!SetConsoleTextAttribute(stdoutHandle, consoleScreenBufferInfo.wAttributes)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 
 void EzConsole::WriteA(LPCSTR message) {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	int messageLength = lstrlenA(message);
 	DWORD charsWritten = 0;
 	if (!WriteConsoleA(stdoutHandle, message, messageLength, &charsWritten, NULL) || charsWritten != messageLength) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzConsole::WriteW(LPCWSTR message) {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (stdoutHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	int messageLength = lstrlenW(message);
 	DWORD charsWritten = 0;
 	if (!WriteConsoleW(stdoutHandle, message, messageLength, &charsWritten, NULL) || charsWritten != messageLength) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzConsole::WriteLineA(LPCSTR message) {
@@ -103,31 +103,31 @@ void EzConsole::WriteLineW(LPCWSTR message) {
 CHAR EzConsole::ReadCharA() {
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 	if (stdinHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD originalMode = 0;
 	if (!GetConsoleMode(stdinHandle, &originalMode)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD mode = originalMode;
 	mode &= ~ENABLE_LINE_INPUT;
 	mode &= ~ENABLE_ECHO_INPUT;
 	if (!SetConsoleMode(stdinHandle, mode)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	while (true) {
 		INPUT_RECORD inputRecord = { };
 		DWORD numberOfEvents = 0;
 		if (!ReadConsoleInputA(stdinHandle, &inputRecord, 1, &numberOfEvents)) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 
 		if (inputRecord.EventType == KEY_EVENT && inputRecord.Event.KeyEvent.bKeyDown) {
 			if (!SetConsoleMode(stdinHandle, originalMode)) {
-				EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+				throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 			}
 
 			return inputRecord.Event.KeyEvent.uChar.AsciiChar;
@@ -137,31 +137,31 @@ CHAR EzConsole::ReadCharA() {
 WCHAR EzConsole::ReadCharW() {
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 	if (stdinHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD originalMode = 0;
 	if (!GetConsoleMode(stdinHandle, &originalMode)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	DWORD mode = originalMode;
 	mode &= ~ENABLE_LINE_INPUT;
 	mode &= ~ENABLE_ECHO_INPUT;
 	if (!SetConsoleMode(stdinHandle, mode)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	while (true) {
 		INPUT_RECORD inputRecord = { };
 		DWORD numberOfEvents = 0;
 		if (!ReadConsoleInputW(stdinHandle, &inputRecord, 1, &numberOfEvents)) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 
 		if (inputRecord.EventType == KEY_EVENT && inputRecord.Event.KeyEvent.bKeyDown) {
 			if (!SetConsoleMode(stdinHandle, originalMode)) {
-				EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+				throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 			}
 
 			return inputRecord.Event.KeyEvent.uChar.UnicodeChar;
@@ -171,7 +171,7 @@ WCHAR EzConsole::ReadCharW() {
 LPSTR EzConsole::ReadLineA() {
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 	if (stdinHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	UINT32 bufferCapacity = 1024;
@@ -209,7 +209,7 @@ LPSTR EzConsole::ReadLineA() {
 LPWSTR EzConsole::ReadLineW() {
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 	if (stdinHandle == INVALID_HANDLE_VALUE) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	UINT32 bufferCapacity = 1024;

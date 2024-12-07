@@ -39,7 +39,7 @@ BOOL EzAudioClientSupportsFormat(IAudioClient* client, const WAVEFORMATEX* forma
 		return FALSE;
 	}
 	else {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 }
 
@@ -50,7 +50,7 @@ IMMDeviceEnumerator* EzAudioGetDeviceEnumerator() {
 	IMMDeviceEnumerator* deviceEnumerator = NULL;
 	hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), reinterpret_cast<void**>(&deviceEnumerator));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return deviceEnumerator;
@@ -61,7 +61,7 @@ IMMDevice* EzAudioGetDefaultDevice(IMMDeviceEnumerator* deviceEnumerator) {
 	IMMDevice* defaultDevice = NULL;
 	hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return defaultDevice;
@@ -72,14 +72,14 @@ UINT32 EzAudioGetDevices(IMMDeviceEnumerator* deviceEnumerator, IMMDevice*** pDe
 	IMMDeviceCollection* deviceCollection = NULL;
 	hr = deviceEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &deviceCollection);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	UINT32 deviceCount = 0;
 	hr = deviceCollection->GetCount(&deviceCount);
 	if (FAILED(hr)) {
 		deviceCollection->Release();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMMDevice** devices = new IMMDevice * [deviceCount];
@@ -88,7 +88,7 @@ UINT32 EzAudioGetDevices(IMMDeviceEnumerator* deviceEnumerator, IMMDevice*** pDe
 		if (FAILED(hr)) {
 			delete[] devices;
 			deviceCollection->Release();
-			EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+			throw EzError::FromHR(hr, __FILE__, __LINE__);
 		}
 	}
 
@@ -110,7 +110,7 @@ LPWSTR EzAudioGetDeviceID(IMMDevice* device) {
 	LPWSTR deviceIDOriginal = NULL;
 	hr = device->GetId(&deviceIDOriginal);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	LPWSTR deviceID = new WCHAR[lstrlen(deviceIDOriginal) + 1];
@@ -126,7 +126,7 @@ LPWSTR EzAudioGetDeviceName(IMMDevice* device) {
 	IPropertyStore* propertyStore = NULL;
 	hr = device->OpenPropertyStore(STGM_READ, &propertyStore);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	PROPVARIANT propVarient = { };
@@ -134,13 +134,13 @@ LPWSTR EzAudioGetDeviceName(IMMDevice* device) {
 	hr = propertyStore->GetValue(PKEY_Device_FriendlyName, &propVarient);
 	if (FAILED(hr)) {
 		propertyStore->Release();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	propertyStore->Release();
 
 	if (propVarient.vt != VT_LPWSTR) {
 		PropVariantClear(&propVarient);
-		throw EzError("The device friendly name was not a wide string.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("The device friendly name was not a wide string.", __FILE__, __LINE__);
 	}
 
 	LPWSTR deviceName = new WCHAR[lstrlen(propVarient.pwszVal) + 1];
@@ -148,7 +148,7 @@ LPWSTR EzAudioGetDeviceName(IMMDevice* device) {
 
 	hr = PropVariantClear(&propVarient);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	return deviceName;
 }
@@ -160,7 +160,7 @@ IAudioClient* EzAudioGetClient(IMMDevice* device) {
 	IAudioClient* client = NULL;
 	hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, reinterpret_cast<void**>(&client));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return client;
@@ -171,7 +171,7 @@ WAVEFORMATEX* EzAudioGetClientMixFormat(IAudioClient* client) {
 	WAVEFORMATEX* formatOriginal = NULL;
 	hr = client->GetMixFormat(&formatOriginal);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	WAVEFORMATEX* format = reinterpret_cast<WAVEFORMATEX*>(new BYTE[sizeof(WAVEFORMATEX) + formatOriginal->cbSize]);
@@ -207,7 +207,7 @@ WAVEFORMATEX* EzAudioGetDeviceFormat(IAudioClient* client) {
 		}
 	}
 	delete[] format;
-	throw EzError("Supplied audio client does not support any formats and is basically a hunk of garbage.", __FILE__, __LINE__);
+	throw EzError::FromMessageA("Supplied audio client does not support any formats and is basically a hunk of garbage.", __FILE__, __LINE__);
 
 foundSupportedFormat:
 	return format;
@@ -246,17 +246,17 @@ void EzAudioInitClient(IAudioClient* client, const WAVEFORMATEX* format, BOOL ex
 		REFERENCE_TIME defaultDevicePeriod = 0;
 		hr = client->GetDevicePeriod(&defaultDevicePeriod, NULL);
 		if (FAILED(hr)) {
-			EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+			throw EzError::FromHR(hr, __FILE__, __LINE__);
 		}
 		hr = client->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, defaultDevicePeriod, defaultDevicePeriod, format, NULL);
 		if (FAILED(hr)) {
-			EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+			throw EzError::FromHR(hr, __FILE__, __LINE__);
 		}
 	}
 	else {
 		hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, 5000000, 0, format, NULL);
 		if (FAILED(hr)) {
-			EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+			throw EzError::FromHR(hr, __FILE__, __LINE__);
 		}
 	}
 }
@@ -266,7 +266,7 @@ IAudioRenderClient* EzAudioGetRenderer(IAudioClient* client) {
 	IAudioRenderClient* renderer = NULL;
 	hr = client->GetService(__uuidof(IAudioRenderClient), reinterpret_cast<void**>(&renderer));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	return renderer;
 }
@@ -282,10 +282,10 @@ LONGLONG EzAudioStartClient(IAudioClient* client) {
 	success = QueryPerformanceCounter(pTimeNow);
 
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	if (!success) {
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	return timeNow;
@@ -297,13 +297,13 @@ BOOL EzAudioStopClientAtTime(IAudioClient* client, LONGLONG stopTime) {
 	LONGLONG timeNow = 0;
 	if (!QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&timeNow))) {
 		lastError = GetLastError();
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	if (timeNow >= stopTime) {
 		hr = client->Stop();
 		if (FAILED(hr)) {
-			EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+			throw EzError::FromHR(hr, __FILE__, __LINE__);
 		}
 		return FALSE; // Stopped playing
 	}
@@ -313,18 +313,18 @@ void EzAudioFillBuffer(IAudioClient* client, IAudioRenderClient* renderer, const
 	HRESULT hr = 0;
 
 	if (*position > bufferLength) {
-		throw EzError("position was out of bounds of buffer.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("position was out of bounds of buffer.", __FILE__, __LINE__);
 	}
 
 	UINT32 driverBufferTotalFrames = 0;
 	hr = client->GetBufferSize(&driverBufferTotalFrames);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	UINT32 driverBufferPaddingFrames = 0;
 	hr = client->GetCurrentPadding(&driverBufferPaddingFrames);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	UINT32 driverBufferFrames = driverBufferTotalFrames - driverBufferPaddingFrames;
@@ -339,7 +339,7 @@ void EzAudioFillBuffer(IAudioClient* client, IAudioRenderClient* renderer, const
 	BYTE* driverBuffer = NULL;
 	hr = renderer->GetBuffer(driverBufferFrames, &driverBuffer);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	UINT32 remainingBytesInBuffer = bufferLength - *position;
@@ -382,7 +382,7 @@ void EzAudioFillBuffer(IAudioClient* client, IAudioRenderClient* renderer, const
 
 	hr = renderer->ReleaseBuffer(driverBufferFrames, 0);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 }
 
@@ -392,14 +392,14 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 
 	hr = MFStartup(MF_VERSION);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFTransform* imfTransform = NULL;
 	hr = CoCreateInstance(CLSID_CResamplerMediaObject, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&imfTransform));
 	if (FAILED(hr)) {
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFMediaType* imfInputType = NULL;
@@ -407,21 +407,21 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 	if (FAILED(hr)) {
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = MFInitMediaTypeFromWaveFormatEx(imfInputType, inputFormat, sizeof(WAVEFORMATEX) + inputFormat->cbSize);
 	if (FAILED(hr)) {
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfTransform->SetInputType(0, imfInputType, 0);
 	if (FAILED(hr)) {
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFMediaType* imfOutputType = NULL;
@@ -430,7 +430,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = MFInitMediaTypeFromWaveFormatEx(imfOutputType, outputFormat, sizeof(WAVEFORMATEX) + outputFormat->cbSize);
 	if (FAILED(hr)) {
@@ -438,7 +438,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfTransform->SetOutputType(0, imfOutputType, 0);
 	if (FAILED(hr)) {
@@ -446,7 +446,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFMediaBuffer* imfInputBuffer = NULL;
@@ -457,7 +457,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfInputBuffer->Lock(&internalInputBuffer, NULL, NULL);
 	if (FAILED(hr)) {
@@ -466,7 +466,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	memcpy(internalInputBuffer, inputBuffer, inputLength);
 	hr = imfInputBuffer->Unlock();
@@ -476,7 +476,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfInputBuffer->SetCurrentLength(inputLength);
 	if (FAILED(hr)) {
@@ -485,7 +485,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFSample* imfInputSample = NULL;
@@ -496,7 +496,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfInputSample->AddBuffer(imfInputBuffer);
 	if (FAILED(hr)) {
@@ -506,7 +506,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	hr = imfTransform->ProcessInput(0, imfInputSample, 0);
@@ -517,7 +517,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	if ((inputFormat->nChannels * inputFormat->wBitsPerSample) / 8 != inputFormat->nBlockAlign || (inputFormat->nChannels * inputFormat->wBitsPerSample) % 8 != 0) {
@@ -527,7 +527,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError("inputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("inputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
 	}
 	if ((outputFormat->nChannels * outputFormat->wBitsPerSample) / 8 != outputFormat->nBlockAlign || (outputFormat->nChannels * outputFormat->wBitsPerSample) % 8 != 0) {
 		imfInputSample->Release();
@@ -536,7 +536,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError("outputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("outputFormat->nBlockAlign was wrong.", __FILE__, __LINE__);
 	}
 	UINT32 computedOutputLength = (static_cast<UINT64>(inputLength) * outputFormat->nSamplesPerSec * outputFormat->nBlockAlign) / (static_cast<UINT64>(inputFormat->nSamplesPerSec) * inputFormat->nBlockAlign);
 	UINT32 maxOutputBufferCapacity = computedOutputLength + (computedOutputLength / 10);
@@ -550,7 +550,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	IMFSample* imfOutputSample = NULL;
@@ -563,7 +563,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	hr = imfOutputSample->AddBuffer(imfOutputBuffer);
 	if (FAILED(hr)) {
@@ -575,7 +575,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	MFT_OUTPUT_DATA_BUFFER outputDataBuffer = { };
@@ -594,7 +594,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	if (status != 0) {
 		imfOutputSample->Release();
@@ -605,7 +605,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError("Invalid status returned from IMFTransform::ProcessOutput().", __FILE__, __LINE__);
+		throw EzError::FromMessageA("Invalid status returned from IMFTransform::ProcessOutput().", __FILE__, __LINE__);
 	}
 
 	UINT32 outputLength = 0;
@@ -619,7 +619,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	if (outputLength >= maxOutputBufferCapacity) {
@@ -631,7 +631,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		throw EzError("Output data overflowed allocated buffer.", __FILE__, __LINE__);
+		throw EzError::FromMessageA("Output data overflowed allocated buffer.", __FILE__, __LINE__);
 	}
 
 	BYTE* outputBuffer = new BYTE[outputLength];
@@ -646,7 +646,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 	memcpy(outputBuffer, internalOutputBuffer, outputLength);
 	hr = imfOutputBuffer->Unlock();
@@ -659,7 +659,7 @@ BYTE* EzAudioTranscode(const WAVEFORMATEX* inputFormat, const WAVEFORMATEX* outp
 		imfInputType->Release();
 		imfTransform->Release();
 		MFShutdown();
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	imfOutputSample->Release();
@@ -683,7 +683,7 @@ IAudioEndpointVolume* EzAudioGetVolumeController(IMMDevice* device) {
 	IAudioEndpointVolume* volumeController = NULL;
 	hr = device->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, reinterpret_cast<void**>(&volumeController));
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return volumeController;
@@ -694,7 +694,7 @@ FLOAT EzAudioGetVolume(IAudioEndpointVolume* volumeController) {
 	FLOAT volume = 0.0f;
 	hr = volumeController->GetMasterVolumeLevelScalar(&volume);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return volume;
@@ -704,7 +704,7 @@ void EzAudioSetVolume(IAudioEndpointVolume* volumeController, FLOAT volume) {
 
 	hr = volumeController->SetMasterVolumeLevelScalar(volume, NULL);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 }
 BOOL EzAudioGetMute(IAudioEndpointVolume* volumeController) {
@@ -713,7 +713,7 @@ BOOL EzAudioGetMute(IAudioEndpointVolume* volumeController) {
 	BOOL mute = FALSE;
 	hr = volumeController->GetMute(&mute);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 
 	return mute;
@@ -723,6 +723,6 @@ void EzAudioSetMute(IAudioEndpointVolume* volumeController, BOOL mute) {
 
 	hr = volumeController->SetMute(mute, NULL);
 	if (FAILED(hr)) {
-		EzError::ThrowFromHR(hr, __FILE__, __LINE__);
+		throw EzError::FromHR(hr, __FILE__, __LINE__);
 	}
 }

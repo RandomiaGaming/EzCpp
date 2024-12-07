@@ -230,7 +230,7 @@ LPSTR EzGetCurrentExePathA() {
 	while (true) {
 		pathLength = GetModuleFileNameA(NULL, path, maxPathLength);
 		if (pathLength == 0) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 		else if (pathLength == maxPathLength) {
 			delete[] path;
@@ -252,7 +252,7 @@ LPWSTR EzGetCurrentExePathW() {
 	while (true) {
 		pathLength = GetModuleFileNameW(NULL, path, maxPathLength);
 		if (pathLength == 0) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 		else if (pathLength == maxPathLength) {
 			delete[] path;
@@ -297,7 +297,7 @@ BOOL EzMatchesCaselessW(LPCWSTR strA, LPCWSTR strB) {
 
 void EzCloseHandleSafely(HANDLE handle) {
 	if (!CloseHandle(handle)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzCloseProcessInfoSafely(PROCESS_INFORMATION processInfo) {
@@ -310,13 +310,13 @@ FARPROC EzGetFunctionAddressA(LPCSTR functionName, LPCSTR libraryName) {
 	if (library == NULL) {
 		library = LoadLibraryA(libraryName);
 		if (library == NULL) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 	}
 
 	FARPROC functionAddress = GetProcAddress(library, functionName);
 	if (functionAddress == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return functionAddress;
@@ -326,7 +326,7 @@ FARPROC EzGetFunctionAddressW(LPCWSTR functionName, LPCWSTR libraryName) {
 	if (library == NULL) {
 		library = LoadLibraryW(libraryName);
 		if (library == NULL) {
-			EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+			throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 		}
 	}
 
@@ -342,7 +342,7 @@ FARPROC EzGetFunctionAddressW(LPCWSTR functionName, LPCWSTR libraryName) {
 	delete[] narrowFunctionName;
 
 	if (functionAddress == NULL) {
-		EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+		throw EzError::FromCode(lastError, __FILE__, __LINE__);
 	}
 
 	return functionAddress;
@@ -360,14 +360,14 @@ void EzSetProcessCritical(BOOL isCritical) {
 	PRtlSetProcessIsCritical RtlSetCriticalProcess = reinterpret_cast<PRtlSetProcessIsCritical>(EzGetFunctionAddressW(L"RtlSetProcessIsCritical", L"ntdll.dll"));
 	nt = RtlSetCriticalProcess(static_cast<BOOLEAN>(isCritical), NULL, FALSE);
 	if (FAILED(nt)) {
-		EzError::ThrowFromNT(nt, __FILE__, __LINE__);
+		throw EzError::FromNT(nt, __FILE__, __LINE__);
 	}
 }
 
 HWINSTA EzGetCurrentStation() {
 	HWINSTA station = GetProcessWindowStation();
 	if (station == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return station;
@@ -380,21 +380,21 @@ HWINSTA EzGetPrimaryStation() {
 	*/
 	HWINSTA station = OpenWindowStationW(L"WinSta0", FALSE, GENERIC_ALL);
 	if (station == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return station;
 }
 void EzSetProcessStation(HWINSTA station) {
 	if (!SetProcessWindowStation(station)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 
 HDESK EzGetCurrentDesktop() {
 	HDESK desktop = GetThreadDesktop(GetCurrentThreadId());
 	if (desktop == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return desktop;
 }
@@ -410,11 +410,11 @@ HDESK EzGetPrimaryDesktop() {
 		if (lastError == ERROR_INVALID_FUNCTION) {
 			desktop = OpenDesktopW(L"Winlogon", 0, FALSE, GENERIC_ALL);
 			if (desktop == NULL) {
-				EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+				throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 			}
 		}
 		else {
-			EzError::ThrowFromCode(lastError, __FILE__, __LINE__);
+			throw EzError::FromCode(lastError, __FILE__, __LINE__);
 		}
 	}
 
@@ -423,18 +423,18 @@ HDESK EzGetPrimaryDesktop() {
 HDESK EzGetSecureDesktop() {
 	HDESK desktop = OpenDesktopW(L"Winlogon", 0, FALSE, GENERIC_ALL);
 	if (desktop == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return desktop;
 }
 void EzSetThreadDesktop(HDESK desktop) {
 	if (!SetThreadDesktop(desktop)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 void EzSwitchToDesktop(HDESK desktop) {
 	if (!SwitchDesktop(desktop)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 
@@ -446,7 +446,7 @@ HCURSOR EzGetCurrentCursor() {
 HCURSOR EzGetPrimaryCursor() {
 	HCURSOR cursor = LoadCursorW(NULL, IDC_ARROW);
 	if (cursor == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 	return cursor;
 }
@@ -506,7 +506,7 @@ void EzBSOD(NTSTATUS errorCode) {
 	HARDERROR_RESPONSE response;
 	nt = NtRaiseHardError(errorCode, 0, NULL, NULL, HARDERROR_RESPONSE_OPTION::OptionShutdownSystem, &response);
 	if (FAILED(nt)) {
-		EzError::ThrowFromNT(nt, __FILE__, __LINE__);
+		throw EzError::FromNT(nt, __FILE__, __LINE__);
 	}
 }
 void EzBSODACPD() {
@@ -525,7 +525,7 @@ PROCESS_INFORMATION EzLaunchProcess(LPCWSTR exePath) {
 	PROCESS_INFORMATION output = {};
 
 	if (!CreateProcessW(exePath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &output)) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	return output;
@@ -536,7 +536,7 @@ void EzShellExecuteProcess(LPCWSTR exePath, LPCWSTR arguments, BOOL hide) {
 		nShowCmd = SW_HIDE;
 	}
 	if (ShellExecuteW(NULL, L"run", exePath, arguments, NULL, nShowCmd) == NULL) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 }
 
@@ -548,7 +548,7 @@ static BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT l
 UINT32 GetMonitors(HMONITOR** output) {
 	EzLL<HMONITOR> monitorsLL = { };
 	if (!EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, reinterpret_cast<LPARAM>(&monitorsLL))) {
-		EzError::ThrowFromCode(GetLastError(), __FILE__, __LINE__);
+		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
 
 	UINT32 monitorCount = monitorsLL.Count();
