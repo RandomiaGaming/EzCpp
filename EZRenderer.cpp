@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #include "EzRenderer.h"
-#include "EzError.h"
+#include "EzCore.h"
 #include <D3D11.h>
 #include <wincodec.h>
 #pragma comment(lib, "D2D1.lib")

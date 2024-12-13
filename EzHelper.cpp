@@ -2,7 +2,7 @@
 
 #include "EzHelper.h"
 #include "EzTokenTools.h"
-#include "EzError.h"
+#include "EzCore.h"
 #include "EzLL.h"
 #include <iomanip>
 

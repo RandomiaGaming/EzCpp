@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #include "EzWindow.h"
-#include "EzError.h"
+#include "EzCore.h"
 
 ATOM EzRegisterClass(const EzClassSettings* settings) {
 	WNDCLASS wc = { };

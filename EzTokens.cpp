@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #include "EzTokens.h"
-#include "EzError.h"
+#include "EzCore.h"
 #include "EzHelper.h"
 
 // Collapse All: Ctrl+M+O

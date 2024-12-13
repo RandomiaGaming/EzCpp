@@ -1,5 +1,5 @@
 #include "EzFiles.h"
-#include "EzError.h"
+#include "EzCore.h"
 
 BYTE* EzReadFileA(LPCSTR filePath, UINT32* pFileContentsLength) {
 	DWORD lastError = 0;

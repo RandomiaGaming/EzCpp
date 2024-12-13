@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #pragma once
-#include "EzError.h"
+#include "EzCore.h"
 
 template<typename T>
 class EzLL final {

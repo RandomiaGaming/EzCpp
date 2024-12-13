@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #include "EzAudio.h"
-#include "EzError.h"
+#include "EzCore.h"
 
 #include <mfapi.h>
 #include <mfidl.h>

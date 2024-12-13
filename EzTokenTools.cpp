@@ -1,5 +1,5 @@
 #include "EzTokenTools.h"
-#include "EzError.h"
+#include "EzCore.h"
 #include "EzHelper.h"
 #include "EzTokens.h"
 #include <sddl.h>

@@ -1,7 +1,7 @@
 // Approved 11/14/2024
 
 #include "EzConsole.h"
-#include "EzError.h"
+#include "EzCore.h"
 
 EzConsole::Color EzConsole::GetColor() {
 	HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
