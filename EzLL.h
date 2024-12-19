@@ -68,19 +68,19 @@ public:
 template<typename T>
 void EzLL<T>::InternalThrowIfEmpty() {
 	if (IsEmpty()) {
-		throw EzError::FromMessageA("Action cannot be preformed while the EzLL is empty.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"Action cannot be preformed while the EzLL is empty.", __FILE__, __LINE__);
 	}
 }
 template<typename T>
 void EzLL<T>::InternalThrowOnIndex(UINT32 index) {
 	if (index >= _count) {
-		throw EzError::FromMessageA("index was outside the bounds of the EzLL.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"index was outside the bounds of the EzLL.", __FILE__, __LINE__);
 	}
 }
 template<typename T>
 void EzLL<T>::InternalThrowIfReset() {
 	if (IsEnumReset()) {
-		throw EzError::FromMessageA("Action cannot be preformed while enumerator is not set.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"Action cannot be preformed while enumerator is not set.", __FILE__, __LINE__);
 	}
 }
 

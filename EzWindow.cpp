@@ -177,7 +177,7 @@ void EzShowWindow(HWND window, int showCommand) {
 
 BOOL EzMessagePumpOne(HWND window, BOOL wait) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"window has been destroyed", __FILE__, __LINE__);
 	}
 	if (wait)
 	{
@@ -203,7 +203,7 @@ BOOL EzMessagePumpOne(HWND window, BOOL wait) {
 }
 BOOL EzMessagePumpAll(HWND window) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"window has been destroyed", __FILE__, __LINE__);
 	}
 	BOOL output = FALSE;
 	MSG message = { };
@@ -216,7 +216,7 @@ BOOL EzMessagePumpAll(HWND window) {
 }
 BOOL EzMessagePumpRun(HWND window) {
 	if (EzWindowIsDestroyed(window)) {
-		throw EzError::FromMessageA("window has been destroyed", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"window has been destroyed", __FILE__, __LINE__);
 	}
 	BOOL output = FALSE;
 	MSG message = { };

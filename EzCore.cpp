@@ -433,27 +433,7 @@ EzError EzError::FromException(std::exception ex, LPCSTR file, UINT32 line) noex
 
 	return EzError::EzError(message, 0, 0, 0, 0);
 }
-EzError EzError::FromMessageA(LPCSTR message, LPCSTR file, UINT32 line) noexcept {
-	LPWSTR wideMessage = NULL;
-	try {
-		std::wostringstream wideMessageStream = { };
-		wideMessageStream << message;
-		std::wstring wideMessageString = wideMessageStream.str();
-		wideMessage = EzAllocArray<WCHAR>(wideMessageString.size() + 1);
-		if (wideMessage == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(wideMessage, wideMessageString.c_str());
-	}
-	catch (...) {
-		wideMessage = NULL;
-	}
-
-	LPWSTR constructedMessage = ConstructMessage(wideMessage, NULL, file, line);
-
-	return EzError::EzError(constructedMessage, 0, 0, 0, 0);
-}
-EzError EzError::FromMessageW(LPCWSTR message, LPCSTR file, UINT32 line) noexcept {
+EzError EzError::FromMessage(LPCWSTR message, LPCSTR file, UINT32 line) noexcept {
 	LPWSTR constructedMessage = ConstructMessage(message, NULL, file, line);
 
 	return EzError::EzError(constructedMessage, 0, 0, 0, 0);
@@ -481,7 +461,7 @@ void EzError::SetSEHandler() noexcept {
 
 void EzClose(HANDLE* handle) {
 	if (handle == NULL) {
-		throw EzError::FromMessageW(L"handle must be a valid pointer to a HANDLE.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"handle must be a valid pointer to a HANDLE.", __FILE__, __LINE__);
 	}
 	if (handle == INVALID_HANDLE_VALUE) {
 		return;

@@ -47,13 +47,7 @@ public:
 	static EzError FromNT(NTSTATUS nt, LPCSTR file, UINT32 line) noexcept;
 	static EzError FromSE(DWORD se, LPCSTR file, UINT32 line) noexcept;
 	static EzError FromException(std::exception ex, LPCSTR file, UINT32 line) noexcept;
-	static EzError FromMessageA(LPCSTR message, LPCSTR file, UINT32 line) noexcept;
-	static EzError FromMessageW(LPCWSTR message, LPCSTR file, UINT32 line) noexcept;
-#ifdef UNICODE
-#define FromMessage FromMessageW
-#else
-#define FromMessage FromMessageA
-#endif // UNICODE
+	static EzError FromMessage(LPCWSTR message, LPCSTR file, UINT32 line) noexcept;
 
 	static void SetSEHandler() noexcept;
 
@@ -77,7 +71,7 @@ template<typename T>
 T* EzAlloc(size_t size) {
 	T* output = reinterpret_cast<T*>(new BYTE[size]);
 	if (output == NULL) {
-		throw EzError::FromMessageW(L"Memory allocation failed.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"Memory allocation failed.", __FILE__, __LINE__);
 	}
 	return output;
 }
@@ -92,7 +86,7 @@ T* EzAllocArray(size_t count) {
 template<typename T>
 void EzFree(T** ptr) {
 	if (ptr == NULL) {
-		throw EzError::FromMessageW(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
 	}
 	if (*ptr == NULL) {
 		return;
@@ -105,7 +99,7 @@ class EzScopeFree final {
 public:
 	EzScopeFree(T** target) {
 		if (target == NULL) {
-			throw EzError::FromMessageW(L"target must be a valid pointer to a T*.", __FILE__, __LINE__);
+			throw EzError::FromMessage(L"target must be a valid pointer to a T*.", __FILE__, __LINE__);
 		}
 		_target = target;
 	}
@@ -149,7 +143,7 @@ T* EzLocalAllocArray(size_t count) {
 template<typename T>
 void EzLocalFree(T** ptr) {
 	if (ptr == NULL) {
-		throw EzError::FromMessageW(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
 	}
 	if (*ptr == NULL) {
 		return;
@@ -164,7 +158,7 @@ class EzScopeLocalFree final {
 public:
 	EzScopeLocalFree(T** target) {
 		if (target == NULL) {
-			throw EzError::FromMessageW(L"target must be a valid pointer to a T*.", __FILE__, __LINE__);
+			throw EzError::FromMessage(L"target must be a valid pointer to a T*.", __FILE__, __LINE__);
 		}
 		_target = target;
 	}
@@ -194,7 +188,7 @@ class EzScopeClose final {
 public:
 	EzScopeClose(HANDLE* target) {
 		if (target == NULL) {
-			throw EzError::FromMessageW(L"target must be a valid pointer to a HANDLE.", __FILE__, __LINE__);
+			throw EzError::FromMessage(L"target must be a valid pointer to a HANDLE.", __FILE__, __LINE__);
 		}
 		_target = target;
 	}

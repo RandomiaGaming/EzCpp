@@ -116,8 +116,6 @@ void								       = MaxTokenInfoClass
 
 */
 
-
-
 // Getting info about tokens
 SID_AND_ATTRIBUTES EzGetTokenUser(HANDLE token);
 TOKEN_GROUPS* EzGetTokenGroups(HANDLE token);
@@ -169,8 +167,6 @@ BOOL EzGetTokenIsSandboxed(HANDLE token);
 void EzGetTokenIsAppSilo(HANDLE token);
 void EzGetTokenLoggingInformation(HANDLE token);
 void EzGetMaxTokenInfoClass(HANDLE token);
-
-
 
 // Setting info about tokens
 void EzSetTokenUser(HANDLE token, SID_AND_ATTRIBUTES value);
@@ -224,418 +220,89 @@ void EzSetTokenIsAppSilo(HANDLE token /* void value */);
 void EzSetTokenLoggingInformation(HANDLE token /* void value */);
 void EzSetMaxTokenInfoClass(HANDLE token /* void value */);
 
+// Printing info about tokens
+void EzPrintTokenUser(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenGroups(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenPrivileges(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenOwner(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenPrimaryGroup(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenDefaultDacl(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSource(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenType(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenImpersonationLevel(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenStatistics(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenRestrictedSids(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSessionId(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenGroupsAndPrivileges(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSessionReference(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSandBoxInert(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenAuditPolicy(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenOrigin(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenElevationType(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenLinkedToken(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenElevation(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenHasRestrictions(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenAccessInformation(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenVirtualizationAllowed(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenVirtualizationEnabled(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIntegrityLevel(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenUIAccess(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenMandatoryPolicy(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenLogonSid(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIsAppContainer(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenCapabilities(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenAppContainerSid(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenAppContainerNumber(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenUserClaimAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenDeviceClaimAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenRestrictedUserClaimAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenRestrictedDeviceClaimAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenDeviceGroups(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenRestrictedDeviceGroups(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSecurityAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIsRestricted(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenProcessTrustLevel(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenPrivateNameSpace(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenSingletonAttributes(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenBnoIsolation(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenChildProcessFlags(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIsLessPrivilegedAppContainer(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIsSandboxed(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenIsAppSilo(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenLoggingInformation(HANDLE token, std::wostream& outputStream);
+void EzPrintMaxTokenInfoClass(HANDLE token, std::wostream& outputStream);
+void EzPrintTokenInfo(HANDLE token, std::wostream& outputStream);
 
+// Working with the current token
+HANDLE EzOpenCurrentToken();
+HANDLE EzDuplicateCurrentToken();
 
-// Printing info about tokens to an Ansi stream
-void EzPrintTokenUserA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenGroupsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenPrivilegesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenOwnerA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenPrimaryGroupA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenDefaultDaclA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSourceA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenTypeA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenImpersonationLevelA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenStatisticsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenRestrictedSidsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSessionIdA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenGroupsAndPrivilegesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSessionReferenceA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSandBoxInertA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenAuditPolicyA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenOriginA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenElevationTypeA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenLinkedTokenA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenElevationA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenHasRestrictionsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenAccessInformationA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenVirtualizationAllowedA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenVirtualizationEnabledA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIntegrityLevelA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenUIAccessA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenMandatoryPolicyA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenLogonSidA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIsAppContainerA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenCapabilitiesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenAppContainerSidA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenAppContainerNumberA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenUserClaimAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenDeviceClaimAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenRestrictedUserClaimAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenRestrictedDeviceClaimAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenDeviceGroupsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenRestrictedDeviceGroupsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSecurityAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIsRestrictedA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenProcessTrustLevelA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenPrivateNameSpaceA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenSingletonAttributesA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenBnoIsolationA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenChildProcessFlagsA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIsLessPrivilegedAppContainerA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIsSandboxedA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenIsAppSiloA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenLoggingInformationA(HANDLE token, std::ostream& outputStream);
-void EzPrintMaxTokenInfoClassA(HANDLE token, std::ostream& outputStream);
+// Impersonating tokens
+void EzImpersonate(HANDLE token);
+void EzStopImpersonating();
+void EzImpersonateWinLogon();
+void EzImpersonateLsass();
 
-// Printing info about tokens to a Unicode stream
-void EzPrintTokenUserW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenGroupsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenPrivilegesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenOwnerW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenPrimaryGroupW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenDefaultDaclW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSourceW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenTypeW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenImpersonationLevelW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenStatisticsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenRestrictedSidsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSessionIdW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenGroupsAndPrivilegesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSessionReferenceW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSandBoxInertW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenAuditPolicyW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenOriginW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenElevationTypeW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenLinkedTokenW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenElevationW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenHasRestrictionsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenAccessInformationW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenVirtualizationAllowedW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenVirtualizationEnabledW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIntegrityLevelW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenUIAccessW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenMandatoryPolicyW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenLogonSidW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIsAppContainerW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenCapabilitiesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenAppContainerSidW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenAppContainerNumberW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenUserClaimAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenDeviceClaimAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenRestrictedUserClaimAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenRestrictedDeviceClaimAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenDeviceGroupsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenRestrictedDeviceGroupsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSecurityAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIsRestrictedW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenProcessTrustLevelW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenPrivateNameSpaceW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenSingletonAttributesW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenBnoIsolationW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenChildProcessFlagsW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIsLessPrivilegedAppContainerW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIsSandboxedW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenIsAppSiloW(HANDLE token, std::wostream& outputStream);
-void EzPrintTokenLoggingInformationW(HANDLE token, std::wostream& outputStream);
-void EzPrintMaxTokenInfoClassW(HANDLE token, std::wostream& outputStream);
+// Enabling/disabling token privileges
+LUID EzLookupPrivilege(LPCWSTR privilege);
+void EzEnableAllPrivileges(HANDLE token);
+void EzDisableAllPrivileges(HANDLE token);
+void EzEnablePrivilege(HANDLE token, LUID privilege);
+void EzDisablePrivilege(HANDLE token, LUID privilege);
+BOOL EzTokenHasPrivilege(HANDLE token, LUID privilege);
 
-// Macros for printing info about tokens to an Ansi or Unicode stream
-#ifdef UNICODE
-#define EzPrintTokenUser EzPrintTokenUserW
-#else
-#define EzPrintTokenUser EzPrintTokenUserA
-#endif // UNICODE
+// Starting processes with tokens
+PROCESS_INFORMATION EzLaunchAsToken(HANDLE token, LPCWSTR exePath);
+PROCESS_INFORMATION EzLaunchAsToken(HANDLE token);
+PROCESS_INFORMATION EzLaunchAsUser(HANDLE token, LPCWSTR exePath);
+PROCESS_INFORMATION EzLaunchAsUser(HANDLE token);
+BOOL EzLaunchWithUAC(LPCWSTR exePath);
+BOOL EzLaunchWithUAC();
 
-#ifdef UNICODE
-#define EzPrintTokenGroups EzPrintTokenGroupsW
-#else
-#define EzPrintTokenGroups EzPrintTokenGroupsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenPrivileges EzPrintTokenPrivilegesW
-#else
-#define EzPrintTokenPrivileges EzPrintTokenPrivilegesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenOwner EzPrintTokenOwnerW
-#else
-#define EzPrintTokenOwner EzPrintTokenOwnerA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenPrimaryGroup EzPrintTokenPrimaryGroupW
-#else
-#define EzPrintTokenPrimaryGroup EzPrintTokenPrimaryGroupA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenDefaultDacl EzPrintTokenDefaultDaclW
-#else
-#define EzPrintTokenDefaultDacl EzPrintTokenDefaultDaclA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSource EzPrintTokenSourceW
-#else
-#define EzPrintTokenSource EzPrintTokenSourceA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenType EzPrintTokenTypeW
-#else
-#define EzPrintTokenType EzPrintTokenTypeA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenImpersonationLevel EzPrintTokenImpersonationLevelW
-#else
-#define EzPrintTokenImpersonationLevel EzPrintTokenImpersonationLevelA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenStatistics EzPrintTokenStatisticsW
-#else
-#define EzPrintTokenStatistics EzPrintTokenStatisticsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenRestrictedSids EzPrintTokenRestrictedSidsW
-#else
-#define EzPrintTokenRestrictedSids EzPrintTokenRestrictedSidsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSessionId EzPrintTokenSessionIdW
-#else
-#define EzPrintTokenSessionId EzPrintTokenSessionIdA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenGroupsAndPrivileges EzPrintTokenGroupsAndPrivilegesW
-#else
-#define EzPrintTokenGroupsAndPrivileges EzPrintTokenGroupsAndPrivilegesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSessionReference EzPrintTokenSessionReferenceW
-#else
-#define EzPrintTokenSessionReference EzPrintTokenSessionReferenceA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSandBoxInert EzPrintTokenSandBoxInertW
-#else
-#define EzPrintTokenSandBoxInert EzPrintTokenSandBoxInertA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenAuditPolicy EzPrintTokenAuditPolicyW
-#else
-#define EzPrintTokenAuditPolicy EzPrintTokenAuditPolicyA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenOrigin EzPrintTokenOriginW
-#else
-#define EzPrintTokenOrigin EzPrintTokenOriginA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenElevationType EzPrintTokenElevationTypeW
-#else
-#define EzPrintTokenElevationType EzPrintTokenElevationTypeA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenLinkedToken EzPrintTokenLinkedTokenW
-#else
-#define EzPrintTokenLinkedToken EzPrintTokenLinkedTokenA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenElevation EzPrintTokenElevationW
-#else
-#define EzPrintTokenElevation EzPrintTokenElevationA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenHasRestrictions EzPrintTokenHasRestrictionsW
-#else
-#define EzPrintTokenHasRestrictions EzPrintTokenHasRestrictionsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenAccessInformation EzPrintTokenAccessInformationW
-#else
-#define EzPrintTokenAccessInformation EzPrintTokenAccessInformationA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenVirtualizationAllowed EzPrintTokenVirtualizationAllowedW
-#else
-#define EzPrintTokenVirtualizationAllowed EzPrintTokenVirtualizationAllowedA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenVirtualizationEnabled EzPrintTokenVirtualizationEnabledW
-#else
-#define EzPrintTokenVirtualizationEnabled EzPrintTokenVirtualizationEnabledA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIntegrityLevel EzPrintTokenIntegrityLevelW
-#else
-#define EzPrintTokenIntegrityLevel EzPrintTokenIntegrityLevelA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenUIAccess EzPrintTokenUIAccessW
-#else
-#define EzPrintTokenUIAccess EzPrintTokenUIAccessA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenMandatoryPolicy EzPrintTokenMandatoryPolicyW
-#else
-#define EzPrintTokenMandatoryPolicy EzPrintTokenMandatoryPolicyA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenLogonSid EzPrintTokenLogonSidW
-#else
-#define EzPrintTokenLogonSid EzPrintTokenLogonSidA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIsAppContainer EzPrintTokenIsAppContainerW
-#else
-#define EzPrintTokenIsAppContainer EzPrintTokenIsAppContainerA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenCapabilities EzPrintTokenCapabilitiesW
-#else
-#define EzPrintTokenCapabilities EzPrintTokenCapabilitiesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenAppContainerSid EzPrintTokenAppContainerSidW
-#else
-#define EzPrintTokenAppContainerSid EzPrintTokenAppContainerSidA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenAppContainerNumber EzPrintTokenAppContainerNumberW
-#else
-#define EzPrintTokenAppContainerNumber EzPrintTokenAppContainerNumberA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenUserClaimAttributes EzPrintTokenUserClaimAttributesW
-#else
-#define EzPrintTokenUserClaimAttributes EzPrintTokenUserClaimAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenDeviceClaimAttributes EzPrintTokenDeviceClaimAttributesW
-#else
-#define EzPrintTokenDeviceClaimAttributes EzPrintTokenDeviceClaimAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenRestrictedUserClaimAttributes EzPrintTokenRestrictedUserClaimAttributesW
-#else
-#define EzPrintTokenRestrictedUserClaimAttributes EzPrintTokenRestrictedUserClaimAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenRestrictedDeviceClaimAttributes EzPrintTokenRestrictedDeviceClaimAttributesW
-#else
-#define EzPrintTokenRestrictedDeviceClaimAttributes EzPrintTokenRestrictedDeviceClaimAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenDeviceGroups EzPrintTokenDeviceGroupsW
-#else
-#define EzPrintTokenDeviceGroups EzPrintTokenDeviceGroupsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenRestrictedDeviceGroups EzPrintTokenRestrictedDeviceGroupsW
-#else
-#define EzPrintTokenRestrictedDeviceGroups EzPrintTokenRestrictedDeviceGroupsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSecurityAttributes EzPrintTokenSecurityAttributesW
-#else
-#define EzPrintTokenSecurityAttributes EzPrintTokenSecurityAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIsRestricted EzPrintTokenIsRestrictedW
-#else
-#define EzPrintTokenIsRestricted EzPrintTokenIsRestrictedA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenProcessTrustLevel EzPrintTokenProcessTrustLevelW
-#else
-#define EzPrintTokenProcessTrustLevel EzPrintTokenProcessTrustLevelA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenPrivateNameSpace EzPrintTokenPrivateNameSpaceW
-#else
-#define EzPrintTokenPrivateNameSpace EzPrintTokenPrivateNameSpaceA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenSingletonAttributes EzPrintTokenSingletonAttributesW
-#else
-#define EzPrintTokenSingletonAttributes EzPrintTokenSingletonAttributesA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenBnoIsolation EzPrintTokenBnoIsolationW
-#else
-#define EzPrintTokenBnoIsolation EzPrintTokenBnoIsolationA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenChildProcessFlags EzPrintTokenChildProcessFlagsW
-#else
-#define EzPrintTokenChildProcessFlags EzPrintTokenChildProcessFlagsA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIsLessPrivilegedAppContainer EzPrintTokenIsLessPrivilegedAppContainerW
-#else
-#define EzPrintTokenIsLessPrivilegedAppContainer EzPrintTokenIsLessPrivilegedAppContainerA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIsSandboxed EzPrintTokenIsSandboxedW
-#else
-#define EzPrintTokenIsSandboxed EzPrintTokenIsSandboxedA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenIsAppSilo EzPrintTokenIsAppSiloW
-#else
-#define EzPrintTokenIsAppSilo EzPrintTokenIsAppSiloA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintTokenLoggingInformation EzPrintTokenLoggingInformationW
-#else
-#define EzPrintTokenLoggingInformation EzPrintTokenLoggingInformationA
-#endif // UNICODE
-
-#ifdef UNICODE
-#define EzPrintMaxTokenInfoClass EzPrintMaxTokenInfoClassW
-#else
-#define EzPrintMaxTokenInfoClass EzPrintMaxTokenInfoClassA
-#endif // UNICODE
-
-// General printing functions to print all info
-void EzPrintTokenInfoA(HANDLE token, std::ostream& outputStream);
-void EzPrintTokenInfoW(HANDLE token, std::wostream& outputStream);
-#ifdef UNICODE
-#define EzPrintTokenInfo EzPrintTokenInfoW
-#else
-#define EzPrintTokenInfo EzPrintTokenInfoA
-#endif // UNICODE
+// Token privilege escalation
+void EzGrantUIAccessToToken(HANDLE token);
+void EzMakeTokenInteractive(HANDLE token);
+void EzGiveTokenSystemIntegrity(HANDLE token);
+void EzStealCreateTokenPermission(HANDLE token);
+HANDLE EzCreateGodToken();
+BOOL EzIsGodToken(HANDLE token);

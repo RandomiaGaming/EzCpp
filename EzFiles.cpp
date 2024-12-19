@@ -5,7 +5,7 @@ BYTE* EzReadFileA(LPCSTR filePath, UINT32* pFileContentsLength) {
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileA(filePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -23,7 +23,7 @@ BYTE* EzReadFileA(LPCSTR filePath, UINT32* pFileContentsLength) {
 
 	BYTE* fileContents = new BYTE[fileSize];
 	if (fileContents == NULL) {
-		throw EzError::FromMessageA("failed to allocate memory for fileContents", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"failed to allocate memory for fileContents", __FILE__, __LINE__);
 	}
 
 
@@ -49,7 +49,7 @@ BYTE* EzReadFileW(LPCWSTR filePath, UINT32* pFileContentsLength) {
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileW(filePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -67,7 +67,7 @@ BYTE* EzReadFileW(LPCWSTR filePath, UINT32* pFileContentsLength) {
 
 	BYTE* fileContents = new BYTE[fileSize];
 	if (fileContents == NULL) {
-		throw EzError::FromMessageA("failed to allocate memory for fileContents", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"failed to allocate memory for fileContents", __FILE__, __LINE__);
 	}
 
 
@@ -94,7 +94,7 @@ LPSTR EzReadFileTextA(LPCSTR filePath) {
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileA(filePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -113,7 +113,7 @@ LPSTR EzReadFileTextA(LPCSTR filePath) {
 	UINT32 fileContentsLength = fileSize / sizeof(CHAR);
 	LPSTR fileContents = new CHAR[fileContentsLength + 1];
 	if (fileContents == NULL) {
-		throw EzError::FromMessageA("failed to allocate memory for fileContents", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"failed to allocate memory for fileContents", __FILE__, __LINE__);
 	}
 	fileContents[fileContentsLength] = '\0';
 
@@ -136,7 +136,7 @@ LPWSTR EzReadFileTextW(LPCWSTR filePath) {
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileW(filePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -155,7 +155,7 @@ LPWSTR EzReadFileTextW(LPCWSTR filePath) {
 	UINT32 fileContentsLength = fileSize / sizeof(WCHAR);
 	LPWSTR fileContents = new WCHAR[fileContentsLength + 1];
 	if (fileContents == NULL) {
-		throw EzError::FromMessageA("failed to allocate memory for fileContents", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"failed to allocate memory for fileContents", __FILE__, __LINE__);
 	}
 	fileContents[fileContentsLength] = '\0';
 
@@ -179,7 +179,7 @@ void EzWriteFileA(LPCSTR filePath, const BYTE* fileContents, UINT32 fileContents
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileA(filePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -203,7 +203,7 @@ void EzWriteFileW(LPCWSTR filePath, const BYTE* fileContents, UINT32 fileContent
 	DWORD lastError = 0;
 
 	if (filePath == NULL) {
-		throw EzError::FromMessageA("filePath cannot be null.", __FILE__, __LINE__);
+		throw EzError::FromMessage(L"filePath cannot be null.", __FILE__, __LINE__);
 	}
 
 	HANDLE fileHandle = CreateFileW(filePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
