@@ -37,6 +37,7 @@ public:
 
 	void Print() const noexcept;
 	LPCWSTR What() const noexcept;
+	LPCWSTR Text() const noexcept;
 	DWORD GetCode() const noexcept;
 	HRESULT GetHR() const noexcept;
 	NTSTATUS GetNT() const noexcept;
@@ -54,13 +55,10 @@ public:
 private:
 	static constexpr LPCWSTR ErrorLogFilePath = L"C:\\ProgramData\\EzLog.txt";
 
-	static LPWSTR ConstructMessage(LPCWSTR text, LPCWSTR source, LPCSTR file, UINT32 line) noexcept;
-	static void PrintToConsole(LPCWSTR message) noexcept;
-	static void PrintToLogFile(LPCWSTR message) noexcept;
-
-	explicit EzError(LPWSTR message, DWORD code, HRESULT hr, NTSTATUS nt, DWORD se) noexcept;
+	explicit EzError(LPWSTR message, LPWSTR text, DWORD code, HRESULT hr, NTSTATUS nt, DWORD se) noexcept;
 
 	LPWSTR _message = NULL;
+	LPWSTR _text = NULL;
 	DWORD _code = 0;
 	HRESULT _hr = 0;
 	NTSTATUS _nt = 0;
@@ -123,65 +121,6 @@ EzScopeFree<type> __scopefor_##name = EzScopeFree<type>(&name);
 #define EzScopeAllocArray(name, count, type) \
 type* name = EzAllocArray<type>(count); \
 EzScopeFree<type> __scopefor_##name = EzScopeFree<type>(&name);
-
-template<typename T>
-T* EzLocalAlloc(size_t size) {
-	T* output = reinterpret_cast<T*>(LocalAlloc(LPTR, size));
-	if (output == NULL) {
-		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
-	}
-	return output;
-}
-template<typename T>
-T* EzLocalAlloc() {
-	return EzLocalAlloc<T>(sizeof(T));
-}
-template<typename T>
-T* EzLocalAllocArray(size_t count) {
-	return EzLocalAlloc<T>(count * sizeof(T));
-}
-template<typename T>
-void EzLocalFree(T** ptr) {
-	if (ptr == NULL) {
-		throw EzError::FromMessage(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
-	}
-	if (*ptr == NULL) {
-		return;
-	}
-	if (LocalFree(*ptr) != NULL) {
-		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
-	}
-	*ptr = NULL;
-}
-template<typename T>
-class EzScopeLocalFree final {
-public:
-	EzScopeLocalFree(T** target) {
-		if (target == NULL) {
-			throw EzError::FromMessage(L"target must be a valid pointer to a T*.", __FILE__, __LINE__);
-		}
-		_target = target;
-	}
-	~EzScopeLocalFree() noexcept {
-		EzLocalFree<T>(_target);
-	}
-	EzScopeLocalFree() = delete;
-	EzScopeLocalFree(const EzScopeLocalFree&) = delete;
-	EzScopeLocalFree& operator=(const EzScopeLocalFree&) = delete;
-	EzScopeLocalFree(EzScopeLocalFree&&) = delete;
-	EzScopeLocalFree& operator=(EzScopeLocalFree&&) = delete;
-private:
-	T** _target;
-};
-#define EzScopeLocalAlloc1(name, type) \
-type* name = EzLocalAlloc<type>(); \
-EzScopeLocalFree __scopefor_##name = EzScopeLocalFree(name);
-#define EzScopeLocalAlloc(name, size, type) \
-type* name = EzLocalAlloc<type>(size); \
-EzScopeLocalFree<type> __scopefor_##name = EzScopeLocalFree<type>(&name);
-#define EzScopeLocalAllocArray(name, count, type) \
-type* name = EzLocalAllocArray<type>(count); \
-EzScopeLocalFree<type> __scopefor_##name = EzScopeLocalFree<type>(&name);
 
 void EzClose(HANDLE* handle);
 class EzScopeClose final {

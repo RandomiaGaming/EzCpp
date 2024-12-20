@@ -6,10 +6,53 @@
 #include <sstream>
 #include <iomanip>
 
-LPWSTR EzError::ConstructMessage(LPCWSTR text, LPCWSTR source, LPCSTR file, UINT32 line) noexcept {
-	// Try here incase memory allocations from ostringstream fail
+static LPWSTR StreamToString(std::wostringstream& value) noexcept {
 	try {
-		std::wostringstream messageStream = { };
+		std::wstring string = value.str();
+		LPWSTR output = new WCHAR[string.size() + 1];
+		if (output == NULL) {
+			throw NULL;
+		}
+		lstrcpyW(output, string.c_str());
+		return output;
+	}
+	catch (...) {
+		return NULL;
+	}
+}
+static LPWSTR DuplicateString(LPCWSTR value) {
+	try {
+		if (value == NULL) {
+			throw NULL;
+		}
+		size_t length = lstrlenW(value);
+		LPWSTR buffer = new WCHAR[length + 1];
+		if (buffer == NULL) {
+			throw NULL;
+		}
+		lstrcpyW(buffer, value);
+		return buffer;
+	}
+	catch (...) {
+		return NULL;
+	}
+}
+static LPWSTR WidenString(LPCSTR value) noexcept {
+	try {
+		if (value == NULL) {
+			throw NULL;
+		}
+		std::wostringstream stream = { };
+		stream << value;
+		return StreamToString(stream);
+	}
+	catch (...) {
+		return NULL;
+	}
+}
+static LPWSTR ConstructMessage(LPCWSTR text, LPCWSTR source, LPCSTR file, UINT32 line) noexcept {
+	try {
+		std::wostringstream output = { };
 
 		// Append file name
 		try {
@@ -21,40 +64,40 @@ LPWSTR EzError::ConstructMessage(LPCWSTR text, LPCWSTR source, LPCSTR file, UINT
 			while (fileNameOnly >= file && *fileNameOnly != '\\' && *fileNameOnly != '/') {
 				fileNameOnly--;
 			}
-			messageStream << L"ERROR in " << (fileNameOnly + 1);
+			output << L"ERROR in " << (fileNameOnly + 1);
 		}
 		catch (...) {
-			messageStream << L"ERROR in UnknownFile";
+			output << L"ERROR in UnknownFile";
 		}
 
 		// Append line number
 		if (line == 0xFFFFFFFF) {
-			messageStream << L" at UnknownLine";
+			output << L" at UnknownLine";
 		}
 		else {
-			messageStream << L" at line " << line;
+			output << L" at line " << line;
 		}
 
 		// Append current time
 		SYSTEMTIME timeNow = { };
 		GetLocalTime(&timeNow);
 		if (timeNow.wHour == 0) {
-			messageStream << L" at 12:" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
+			output << L" at 12:" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
 		}
 		else if (timeNow.wHour < 12) {
-			messageStream << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
+			output << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"am";
 		}
 		else {
-			messageStream << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"pm";
+			output << L" at " << (timeNow.wHour % 12) << L":" << timeNow.wMinute << L":" << timeNow.wSecond << L"pm";
 		}
-		messageStream << L" on " << timeNow.wMonth << L"/" << timeNow.wDay << L"/" << timeNow.wYear;
+		output << L" on " << timeNow.wMonth << L"/" << timeNow.wDay << L"/" << timeNow.wYear;
 
 		// Append error source
 		try {
 			if (source == NULL) {
 				throw NULL;
 			}
-			messageStream << L" from " << source;
+			output << L" from " << source;
 		}
 		catch (...) {}
 
@@ -63,36 +106,26 @@ LPWSTR EzError::ConstructMessage(LPCWSTR text, LPCWSTR source, LPCSTR file, UINT
 			if (text == NULL) {
 				throw NULL;
 			}
-			messageStream << L": " << text;
-			int textLength = lstrlenW(text);
-			if (textLength >= 2) {
-				LPCWSTR lastTwoChars = text + (textLength - 2);
-				if (lastTwoChars[0] != L'\r' || lastTwoChars[1] != L'\n') {
-					messageStream << L"\r\n";
-				}
-			}
+			output << L": " << text;
 		}
 		catch (...) {
-			messageStream << L": UnknownMessage\r\n";
+			output << L": UnknownMessage";
 		}
 
-		// Copy string and return
-		std::wstring messageString = messageStream.str();
-		LPWSTR output = EzAllocArray<WCHAR>(messageString.size() + 1);
-		if (output == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(output, messageString.c_str());
-		return output;
+		output << L"\r\n";
+
+		return StreamToString(output);
 	}
 	catch (...) {
 		return NULL;
 	}
 }
-void EzError::PrintToConsole(LPCWSTR message) noexcept {
+
+static void PrintToConsole(LPCWSTR message) noexcept {
 	if (message == NULL) {
 		return;
 	}
+
 	int messageLength = 0;
 	try {
 		messageLength = lstrlenW(message);
@@ -123,10 +156,11 @@ void EzError::PrintToConsole(LPCWSTR message) noexcept {
 		SetConsoleTextAttribute(stdoutHandle, consoleInfo.wAttributes);
 	}
 }
-void EzError::PrintToLogFile(LPCWSTR message) noexcept {
+static void PrintToLogFile(LPCWSTR message, LPCWSTR errorLogFilePath) noexcept {
 	if (message == NULL) {
 		return;
 	}
+
 	int messageLength = 0;
 	try {
 		messageLength = lstrlenW(message);
@@ -135,9 +169,9 @@ void EzError::PrintToLogFile(LPCWSTR message) noexcept {
 		return;
 	}
 
-	HANDLE logFile = CreateFileW(EzError::ErrorLogFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE logFile = CreateFileW(errorLogFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (logFile == INVALID_HANDLE_VALUE) {
-		logFile = CreateFileW(ErrorLogFilePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		logFile = CreateFileW(errorLogFilePath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 	if (logFile == INVALID_HANDLE_VALUE) {
 		return;
@@ -150,7 +184,10 @@ void EzError::PrintToLogFile(LPCWSTR message) noexcept {
 			throw NULL;
 		}
 
-		fileContents = EzAllocArray<BYTE>(fileSize);
+		fileContents = new BYTE[fileSize];
+		if (fileContents == NULL) {
+			throw NULL;
+		}
 
 		DWORD bytesRead = 0;
 		if (!ReadFile(logFile, fileContents, fileSize, &bytesRead, NULL) || bytesRead != fileSize) {
@@ -159,7 +196,10 @@ void EzError::PrintToLogFile(LPCWSTR message) noexcept {
 	}
 	catch (...) {
 		fileSize = 0;
-		EzFree(&fileContents);
+		if (fileContents != NULL) {
+			delete[] fileContents;
+			fileContents = NULL;
+		}
 	}
 
 	SetFilePointer(logFile, 0, NULL, FILE_BEGIN);
@@ -174,67 +214,65 @@ void EzError::PrintToLogFile(LPCWSTR message) noexcept {
 
 	CloseHandle(logFile);
 
-	EzFree(&fileContents);
+	if (fileContents != NULL) {
+		delete[] fileContents;
+		fileContents = NULL;
+	}
 }
 
-EzError::EzError(LPWSTR message, DWORD code, HRESULT hr, NTSTATUS nt, DWORD se) noexcept {
+EzError::EzError(LPWSTR message, LPWSTR text, DWORD code, HRESULT hr, NTSTATUS nt, DWORD se) noexcept {
 	_message = message;
+	_text = text;
 	_code = code;
 	_hr = hr;
 	_nt = nt;
 	_se = se;
 }
 EzError::~EzError() noexcept {
-	EzFree(&_message);
-
+	if (_message != NULL) {
+		delete[] _message;
+		_message = NULL;
+	}
+	if (_text != NULL) {
+		delete[] _text;
+		_text = NULL;
+	}
 	_code = 0;
 	_hr = 0;
 	_nt = 0;
 	_se = 0;
 }
 EzError::EzError(const EzError& other) noexcept {
-	try {
-		if (other._message == NULL) {
-			throw NULL;
-		}
-		int messageLength = lstrlenW(other._message) + 1;
-		_message = EzAllocArray<WCHAR>(messageLength);
-		if (_message == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(_message, other._message);
-	}
-	catch (...) {
-		_message = NULL;
-	}
-
+	_message = DuplicateString(other._message);
+	_text = DuplicateString(other._text);
 	_code = other._code;
 	_hr = other._hr;
 	_nt = other._nt;
 	_se = other._se;
 }
 EzError& EzError::operator=(const EzError& other) noexcept {
+	// Return this unchanged
 	if (this == &other) {
 		return *this;
 	}
 
-	EzFree(&_message);
-
-	try {
-		if (other._message == NULL) {
-			throw NULL;
-		}
-		int messageLength = lstrlenW(other._message) + 1;
-		_message = EzAllocArray<WCHAR>(messageLength);
-		if (_message == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(_message, other._message);
-	}
-	catch (...) {
+	// Free this
+	if (_message != NULL) {
+		delete[] _message;
 		_message = NULL;
 	}
+	if (_text != NULL) {
+		delete[] _text;
+		_text = NULL;
+	}
+	_code = 0;
+	_hr = 0;
+	_nt = 0;
+	_se = 0;
 
+	// Set this equal to other
+	_message = DuplicateString(other._message);
+	_text = DuplicateString(other._text);
 	_code = other._code;
 	_hr = other._hr;
 	_nt = other._nt;
@@ -245,10 +283,13 @@ EzError& EzError::operator=(const EzError& other) noexcept {
 
 void EzError::Print() const noexcept {
 	PrintToConsole(_message);
-	PrintToLogFile(_message);
+	PrintToLogFile(_message, EzError::ErrorLogFilePath);
 }
 LPCWSTR EzError::What() const noexcept {
 	return _message;
+}
+LPCWSTR EzError::Text() const noexcept {
+	return _text;
 }
 DWORD EzError::GetCode() const noexcept {
 	return _code;
@@ -273,23 +314,25 @@ EzError EzError::FromCode(DWORD code, LPCSTR file, UINT32 line) noexcept {
 	try {
 		std::wostringstream sourceStream = { };
 		sourceStream << L"error code 0x" << std::hex << std::setw(sizeof(DWORD) * sizeof(WCHAR)) << std::setfill(L'0') << code << std::setfill(L' ') << std::setw(0) << std::dec;
-		std::wstring sourceString = sourceStream.str();
-		source = EzAllocArray<WCHAR>(sourceString.size() + 1);
-		if (source == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(source, sourceString.c_str());
+		source = StreamToString(sourceStream);
 	}
 	catch (...) {
 		source = NULL;
 	}
 
+	LPWSTR text = DuplicateString(systemMessage);
 	LPWSTR message = ConstructMessage(systemMessage, source, file, line);
 
-	EzLocalFree(&systemMessage);
-	EzFree(&source);
+	if (systemMessage != NULL) {
+		LocalFree(systemMessage);
+		systemMessage = NULL;
+	}
+	if (source != NULL) {
+		delete[] source;
+		source = NULL;
+	}
 
-	return EzError::EzError(message, code, 0, 0, 0);
+	return EzError::EzError(message, text, code, 0, 0, 0);
 }
 EzError EzError::FromHR(HRESULT hr, LPCSTR file, UINT32 line) noexcept {
 	LPWSTR systemMessage = NULL;
@@ -307,33 +350,38 @@ EzError EzError::FromHR(HRESULT hr, LPCSTR file, UINT32 line) noexcept {
 	try {
 		std::wostringstream sourceStream = { };
 		sourceStream << L"HRESULT 0x" << std::hex << std::setw(sizeof(HRESULT) * sizeof(WCHAR)) << std::setfill(L'0') << hr << std::setfill(L' ') << std::setw(0) << std::dec;
-		std::wstring sourceString = sourceStream.str();
-		source = EzAllocArray<WCHAR>(sourceString.size() + 1);
-		if (source == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(source, sourceString.c_str());
+		source = StreamToString(sourceStream);
 	}
 	catch (...) {
 		source = NULL;
 	}
 
 	LPWSTR message = NULL;
+	LPWSTR text = NULL;
 	if (systemMessage != NULL) {
+		text = DuplicateString(systemMessage);
 		message = ConstructMessage(systemMessage, source, file, line);
 	}
 	else if (comMessage != NULL) {
+		text = DuplicateString(comMessage);
 		message = ConstructMessage(comMessage, source, file, line);
 	}
 	else {
+		text = NULL;
 		message = ConstructMessage(NULL, source, file, line);
 	}
 
-	EzLocalFree(&systemMessage);
+	if (systemMessage != NULL) {
+		LocalFree(systemMessage);
+		systemMessage = NULL;
+	}
 	comMessage = NULL;
-	EzFree(&source);
+	if (source != NULL) {
+		delete[] source;
+		source = NULL;
+	}
 
-	return EzError::EzError(message, 0, hr, 0, 0);
+	return EzError::EzError(message, text, 0, hr, 0, 0);
 }
 EzError EzError::FromNT(NTSTATUS nt, LPCSTR file, UINT32 line) noexcept {
 	LPWSTR systemMessage = NULL;
@@ -345,98 +393,86 @@ EzError EzError::FromNT(NTSTATUS nt, LPCSTR file, UINT32 line) noexcept {
 	try {
 		std::wostringstream sourceStream = { };
 		sourceStream << L"NTSTATUS 0x" << std::hex << std::setw(sizeof(NTSTATUS) * sizeof(WCHAR)) << std::setfill(L'0') << nt << std::setfill(L' ') << std::setw(0) << std::dec;
-		std::wstring sourceString = sourceStream.str();
-		source = EzAllocArray<WCHAR>(sourceString.size() + 1);
-		if (source == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(source, sourceString.c_str());
+		source = StreamToString(sourceStream);
 	}
 	catch (...) {
 		source = NULL;
 	}
 
+	LPWSTR text = DuplicateString(systemMessage);
 	LPWSTR message = ConstructMessage(systemMessage, source, file, line);
 
-	EzLocalFree(&systemMessage);
-	EzFree(&source);
+	if (systemMessage != NULL) {
+		LocalFree(systemMessage);
+		systemMessage = NULL;
+	}
+	if (source != NULL) {
+		delete[] source;
+		source = NULL;
+	}
 
-	return EzError::EzError(message, 0, 0, nt, 0);
+	return EzError::EzError(message, text, 0, 0, nt, 0);
 }
 EzError EzError::FromSE(DWORD se, LPCSTR file, UINT32 line) noexcept {
 	LPCWSTR seMessage = NULL;
 	switch (se) {
-		case EXCEPTION_ACCESS_VIOLATION: seMessage = L"Access violation/Segmentation fault"; break;
-		case EXCEPTION_DATATYPE_MISALIGNMENT: seMessage = L"Data type misalignment"; break;
-		case EXCEPTION_BREAKPOINT: seMessage = L"Breakpoint"; break;
-		case EXCEPTION_SINGLE_STEP: seMessage = L"Single step"; break;
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: seMessage = L"Array bounds exceeded"; break;
-		case EXCEPTION_FLT_DENORMAL_OPERAND: seMessage = L"Float denormal operand"; break;
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO: seMessage = L"Float divide by zero"; break;
-		case EXCEPTION_FLT_INEXACT_RESULT: seMessage = L"Float inexact result"; break;
-		case EXCEPTION_FLT_INVALID_OPERATION: seMessage = L"Float invalid operation"; break;
-		case EXCEPTION_FLT_OVERFLOW: seMessage = L"Float overflow"; break;
-		case EXCEPTION_FLT_STACK_CHECK: seMessage = L"Float stack check"; break;
-		case EXCEPTION_FLT_UNDERFLOW: seMessage = L"Float underflow"; break;
-		case EXCEPTION_INT_DIVIDE_BY_ZERO: seMessage = L"Integer divide by zero"; break;
-		case EXCEPTION_INT_OVERFLOW: seMessage = L"Integer overflow"; break;
-		case EXCEPTION_PRIV_INSTRUCTION: seMessage = L"Priv instruction"; break;
-		case EXCEPTION_IN_PAGE_ERROR: seMessage = L"In page error"; break;
-		case EXCEPTION_ILLEGAL_INSTRUCTION: seMessage = L"Illegal instruction"; break;
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION: seMessage = L"Non-continuable exception"; break;
-		case EXCEPTION_STACK_OVERFLOW: seMessage = L"Stack overflow"; break;
-		case EXCEPTION_INVALID_DISPOSITION: seMessage = L"Invalid disposition"; break;
-		case EXCEPTION_GUARD_PAGE: seMessage = L"Guard page"; break;
-		case EXCEPTION_INVALID_HANDLE: seMessage = L"Invalid handle"; break;
-		case CONTROL_C_EXIT: seMessage = L"DLL initialization failure"; break;
-		default: seMessage = L"Unknown structured exception"; break;
+	case EXCEPTION_ACCESS_VIOLATION: seMessage = L"Access violation/Segmentation fault"; break;
+	case EXCEPTION_DATATYPE_MISALIGNMENT: seMessage = L"Data type misalignment"; break;
+	case EXCEPTION_BREAKPOINT: seMessage = L"Breakpoint"; break;
+	case EXCEPTION_SINGLE_STEP: seMessage = L"Single step"; break;
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: seMessage = L"Array bounds exceeded"; break;
+	case EXCEPTION_FLT_DENORMAL_OPERAND: seMessage = L"Float denormal operand"; break;
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO: seMessage = L"Float divide by zero"; break;
+	case EXCEPTION_FLT_INEXACT_RESULT: seMessage = L"Float inexact result"; break;
+	case EXCEPTION_FLT_INVALID_OPERATION: seMessage = L"Float invalid operation"; break;
+	case EXCEPTION_FLT_OVERFLOW: seMessage = L"Float overflow"; break;
+	case EXCEPTION_FLT_STACK_CHECK: seMessage = L"Float stack check"; break;
+	case EXCEPTION_FLT_UNDERFLOW: seMessage = L"Float underflow"; break;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO: seMessage = L"Integer divide by zero"; break;
+	case EXCEPTION_INT_OVERFLOW: seMessage = L"Integer overflow"; break;
+	case EXCEPTION_PRIV_INSTRUCTION: seMessage = L"Priv instruction"; break;
+	case EXCEPTION_IN_PAGE_ERROR: seMessage = L"In page error"; break;
+	case EXCEPTION_ILLEGAL_INSTRUCTION: seMessage = L"Illegal instruction"; break;
+	case EXCEPTION_NONCONTINUABLE_EXCEPTION: seMessage = L"Non-continuable exception"; break;
+	case EXCEPTION_STACK_OVERFLOW: seMessage = L"Stack overflow"; break;
+	case EXCEPTION_INVALID_DISPOSITION: seMessage = L"Invalid disposition"; break;
+	case EXCEPTION_GUARD_PAGE: seMessage = L"Guard page"; break;
+	case EXCEPTION_INVALID_HANDLE: seMessage = L"Invalid handle"; break;
+	case CONTROL_C_EXIT: seMessage = L"DLL initialization failure"; break;
+	default: seMessage = L"Unknown structured exception"; break;
 	}
 
 	LPWSTR source = NULL;
 	try {
 		std::wostringstream sourceStream = { };
 		sourceStream << L"structured exception 0x" << std::hex << std::setw(sizeof(DWORD) * sizeof(WCHAR)) << std::setfill(L'0') << se << std::setfill(L' ') << std::setw(0) << std::dec;
-		std::wstring sourceString = sourceStream.str();
-		source = EzAllocArray<WCHAR>(sourceString.size() + 1);
-		if (source == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(source, sourceString.c_str());
+		source = StreamToString(sourceStream);
 	}
 	catch (...) {
 		source = NULL;
 	}
 
+	LPWSTR text = DuplicateString(seMessage);
 	LPWSTR message = ConstructMessage(seMessage, source, file, line);
 
-	EzFree(&source);
+	if (source != NULL) {
+		delete[] source;
+		source = NULL;
+	}
 
-	return EzError::EzError(message, 0, 0, 0, se);
+	return EzError::EzError(message, text, 0, 0, 0, se);
 }
 EzError EzError::FromException(std::exception ex, LPCSTR file, UINT32 line) noexcept {
-	LPWSTR exMessage = NULL;
-	try {
-		std::wostringstream exMessageStream = { };
-		exMessageStream << ex.what();
-		std::wstring exMessageString = exMessageStream.str();
-		exMessage = EzAllocArray<WCHAR>(exMessageString.size() + 1);
-		if (exMessage == NULL) {
-			throw NULL;
-		}
-		lstrcpyW(exMessage, exMessageString.c_str());
-	}
-	catch (...) {
-		exMessage = NULL;
-	}
+	LPWSTR text = WidenString(ex.what());
+	LPWSTR message = ConstructMessage(text, NULL, file, line);
 
-	LPWSTR message = ConstructMessage(exMessage, NULL, file, line);
-
-	return EzError::EzError(message, 0, 0, 0, 0);
+	return EzError::EzError(message, text, 0, 0, 0, 0);
 }
 EzError EzError::FromMessage(LPCWSTR message, LPCSTR file, UINT32 line) noexcept {
+	LPWSTR text = DuplicateString(message);
 	LPWSTR constructedMessage = ConstructMessage(message, NULL, file, line);
 
-	return EzError::EzError(constructedMessage, 0, 0, 0, 0);
+	return EzError::EzError(constructedMessage, text, 0, 0, 0, 0);
 }
 
 static void SE_Translator(unsigned int code, EXCEPTION_POINTERS* pExp) noexcept {
@@ -469,5 +505,8 @@ void EzClose(HANDLE* handle) {
 	if (!CloseHandle(handle)) {
 		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
+#pragma warning(push)
+#pragma warning(suppress: 6001)
 	*handle = INVALID_HANDLE_VALUE;
+#pragma warning(pop)
 }
