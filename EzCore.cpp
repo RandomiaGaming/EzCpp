@@ -495,18 +495,21 @@ void EzError::SetSEHandler() noexcept {
 	_set_se_translator(SE_Translator);
 }
 
-void EzClose(HANDLE* handle) {
+void EzClose(HANDLE* handle, BOOL noExcept) {
 	if (handle == NULL) {
+		if (noExcept) {
+			return;
+		}
 		throw EzError::FromMessage(L"handle must be a valid pointer to a HANDLE.", __FILE__, __LINE__);
 	}
 	if (handle == INVALID_HANDLE_VALUE) {
 		return;
 	}
 	if (!CloseHandle(handle)) {
+		if (noExcept) {
+			return;
+		}
 		throw EzError::FromCode(GetLastError(), __FILE__, __LINE__);
 	}
-#pragma warning(push)
-#pragma warning(suppress: 6001)
 	*handle = INVALID_HANDLE_VALUE;
-#pragma warning(pop)
 }

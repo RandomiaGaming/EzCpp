@@ -82,8 +82,11 @@ T* EzAllocArray(size_t count) {
 	return EzAlloc<T>(count * sizeof(T));
 }
 template<typename T>
-void EzFree(T** ptr) {
+void EzFree(T** ptr, BOOL noExcept = FALSE) {
 	if (ptr == NULL) {
+		if (noExcept) {
+			return;
+		}
 		throw EzError::FromMessage(L"ptr must be a valid pointer to a T*.", __FILE__, __LINE__);
 	}
 	if (*ptr == NULL) {
@@ -122,7 +125,7 @@ EzScopeFree<type> __scopefor_##name = EzScopeFree<type>(&name);
 type* name = EzAllocArray<type>(count); \
 EzScopeFree<type> __scopefor_##name = EzScopeFree<type>(&name);
 
-void EzClose(HANDLE* handle);
+void EzClose(HANDLE* handle, BOOL noExcept = FALSE);
 class EzScopeClose final {
 public:
 	EzScopeClose(HANDLE* target) {
